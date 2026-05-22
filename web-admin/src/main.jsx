@@ -21,12 +21,13 @@ import AuthGate from './AuthGate.jsx';
 import AdminUpload from './AdminUpload.jsx';
 import UploadList from './UploadList.jsx';
 import LearningPackList from './LearningPackList.jsx';
+import QuestionReviewList from './QuestionReviewList.jsx';
 import './styles.css';
 
 const stats = [
   { label: 'Students', value: '12,480', change: '+18%', icon: Users },
   { label: 'Learning Packs', value: 'Live', change: 'From Firestore', icon: BookOpen },
-  { label: 'Pending Reviews', value: 'Live', change: 'From uploads', icon: FileText },
+  { label: 'Pending Reviews', value: 'Live', change: 'Questions + uploads', icon: FileText },
   { label: 'Premium Users', value: '2,138', change: '+9%', icon: Crown },
 ];
 
@@ -98,7 +99,7 @@ function Dashboard({ user, setActive }) {
         <div>
           <p className="eyebrow">Premium PC Admin</p>
           <h2>Manage app content, AI quiz generation, students, and subscriptions from one URL.</h2>
-          <p>Upload files, approve them, publish Learning Packs, and prepare content for the student app.</p>
+          <p>Upload files, approve them, publish Learning Packs, and review generated questions before students see them.</p>
           <div className="hero-actions">
             <button className="primary-button" onClick={() => setActive('content')}>Open Upload Manager</button>
             <button className="secondary-button" onClick={() => setActive('generation')}><Sparkles size={18} /> Review AI Queue</button>
@@ -149,7 +150,18 @@ function ContentManager({ user }) {
 }
 
 function QuizReview() {
-  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Gold Rubric</p><h3>AI Quiz Review Queue</h3></div><button className="secondary-button"><Brain size={18} /> Generate More</button></div><UploadList /></div></section>;
+  return (
+    <section className="page-grid">
+      <div className="panel-card wide">
+        <div className="panel-header"><div><p className="eyebrow">Gold Rubric</p><h3>Question Review Bank</h3></div><span className="badge success">questions</span></div>
+        <QuestionReviewList />
+      </div>
+      <div className="panel-card wide">
+        <div className="panel-header"><div><p className="eyebrow">Source Queue</p><h3>Uploads Waiting for Generation</h3></div><span className="badge warning">admin_uploads</span></div>
+        <UploadList />
+      </div>
+    </section>
+  );
 }
 
 function Students() {
@@ -161,7 +173,7 @@ function Subscriptions() {
 }
 
 function SettingsPanel() {
-  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><h3>Deployment Settings</h3><span className="badge">Firebase Auth</span></div><div className="settings-list"><SettingItem title="Firebase web login" body="Email/password and Google login are enabled in the web admin shell." /><SettingItem title="Firebase upload" body="Admin uploads save files to Firebase Storage and metadata to Firestore collection admin_uploads." /><SettingItem title="Learning Pack publish" body="Approved uploads can be published into Firestore collection learning_packs for the student app." /></div></div></section>;
+  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><h3>Deployment Settings</h3><span className="badge">Firebase Auth</span></div><div className="settings-list"><SettingItem title="Firebase web login" body="Email/password and Google login are enabled in the web admin shell." /><SettingItem title="Firebase upload" body="Admin uploads save files to Firebase Storage and metadata to Firestore collection admin_uploads." /><SettingItem title="Question review bank" body="AI-generated questions can be reviewed from Firestore collection questions before publishing to students." /></div></div></section>;
 }
 
 function PlanBox({ title, price, features, highlighted = false }) {
