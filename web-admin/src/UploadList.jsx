@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { CheckCircle2, ExternalLink, FileText, RefreshCw, Send, XCircle } from 'lucide-react';
+import { CheckCircle2, ExternalLink, FileText, RefreshCw, Send, Sparkles, XCircle } from 'lucide-react';
 import { db } from './firebase';
 
 function formatDate(value) {
@@ -9,7 +9,7 @@ function formatDate(value) {
 }
 
 function statusClass(status) {
-  if (status === 'approved' || status === 'published' || status === 'ready_to_publish') return 'success';
+  if (status === 'approved' || status === 'published' || status === 'ready_to_publish' || status === 'ai_job_queued') return 'success';
   if (status === 'rejected') return 'error';
   if (status === 'queued_for_review' || status === 'draft') return 'warning';
   return '';
@@ -101,6 +101,40 @@ export default function UploadList() {
     }
   }
 
+  async function queueAiGeneration(item) {
+    setBusyId(item.id);
+    try {
+      const jobRef = await addDoc(collection(db, 'generation_jobs'), {
+        type: 'learning_pack_quiz_generation',
+        status: 'queued',
+        sourceUploadId: item.id,
+        learningPackId: item.learningPackId || null,
+        title: item.title || item.fileName || 'Untitled Learning Pack',
+        grade: item.grade,
+        subject: item.subject,
+        medium: item.medium,
+        difficulty: item.difficulty || 'Mixed',
+        generationStyle: item.generationStyle || 'Exam Paper',
+        bloomLevel: item.bloomLevel || 'Mixed',
+        questionCounts: item.questionCounts || { mcq: 15, fib: 10, trueFalse: 10, hoq: 3 },
+        sourceStoragePath: item.storagePath || null,
+        sourceDownloadURL: item.downloadURL || null,
+        instructions: item.adminNotes || '',
+        model: 'gemini',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, 'admin_uploads', item.id), {
+        aiGenerationStatus: 'ai_job_queued',
+        generationJobId: jobRef.id,
+        updatedAt: serverTimestamp(),
+      });
+    } finally {
+      setBusyId('');
+    }
+  }
+
   if (loading) {
     return <div className="upload-message uploading"><RefreshCw size={16} /> Loading uploaded files...</div>;
   }
@@ -118,6 +152,7 @@ export default function UploadList() {
       {uploads.map((item) => {
         const currentStatus = item.reviewStatus || item.aiGenerationStatus || item.status || 'uploaded';
         const canPublish = currentStatus === 'approved' || currentStatus === 'ready_to_publish';
+        const canQueueAi = ['approved', 'ready_to_publish', 'published', 'published_to_learning_packs'].includes(currentStatus);
         const isBusy = busyId === item.id;
 
         return (
@@ -135,6 +170,7 @@ export default function UploadList() {
                 MCQ {item.questionCounts?.mcq ?? 0} / FIB {item.questionCounts?.fib ?? 0} / TF {item.questionCounts?.trueFalse ?? 0} / HOQ {item.questionCounts?.hoq ?? 0}
               </p>
               {item.learningPackId && <p>Learning Pack ID: {item.learningPackId}</p>}
+              {item.generationJobId && <p>AI Job ID: {item.generationJobId}</p>}
             </div>
             <div className="upload-row-actions">
               {item.downloadURL && (
@@ -147,6 +183,9 @@ export default function UploadList() {
               </button>
               <button className="small-publish-button" disabled={!canPublish || isBusy} onClick={() => publishLearningPack(item)}>
                 <Send size={15} /> Publish
+              </button>
+              <button className="small-ai-button" disabled={!canQueueAi || isBusy} onClick={() => queueAiGeneration(item)}>
+                <Sparkles size={15} /> Queue AI
               </button>
               <button className="small-danger-button" disabled={isBusy} onClick={() => updateReviewStatus(item.id, 'rejected')}>
                 <XCircle size={15} /> Reject
