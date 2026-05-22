@@ -4,7 +4,7 @@ import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { FileText, UploadCloud, X } from 'lucide-react';
 import { db, storage } from './firebase';
 
-const grades = ['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11'];
+const grades = ['Grade 7', 'Grade 8', 'Grade 9'];
 const subjects = ['Islamic Studies', 'Science', 'Math', 'English', 'Arabic', 'Social Studies'];
 const mediums = ['Arabic', 'English', 'Arabic Support'];
 
