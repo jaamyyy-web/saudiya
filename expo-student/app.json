@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Saudi Edu Student Preview",
+    "slug": "saudi-edu-student-preview",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.saudiedu.studentpreview"
+    },
+    "android": {
+      "package": "com.saudiedu.studentpreview"
+    }
+  }
+}
