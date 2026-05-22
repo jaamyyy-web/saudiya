@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import {
   BookOpen,
   Brain,
-  CheckCircle2,
   Crown,
   FileText,
   GraduationCap,
@@ -21,11 +20,12 @@ import {
 import AuthGate from './AuthGate.jsx';
 import AdminUpload from './AdminUpload.jsx';
 import UploadList from './UploadList.jsx';
+import LearningPackList from './LearningPackList.jsx';
 import './styles.css';
 
 const stats = [
   { label: 'Students', value: '12,480', change: '+18%', icon: Users },
-  { label: 'Learning Packs', value: '326', change: '+42', icon: BookOpen },
+  { label: 'Learning Packs', value: 'Live', change: 'From Firestore', icon: BookOpen },
   { label: 'Pending Reviews', value: 'Live', change: 'From uploads', icon: FileText },
   { label: 'Premium Users', value: '2,138', change: '+9%', icon: Crown },
 ];
@@ -37,20 +37,6 @@ const navItems = [
   { id: 'students', label: 'Students', icon: Users },
   { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
   { id: 'settings', label: 'Settings', icon: Settings },
-];
-
-const packs = [
-  { grade: 'Grade 7', subject: 'Islamic Studies', title: 'Faith and Good Character', status: 'Published', questions: 38 },
-  { grade: 'Grade 8', subject: 'Science', title: 'Chemical Reactions', status: 'Draft', questions: 27 },
-  { grade: 'Grade 9', subject: 'Math', title: 'Linear Equations', status: 'Review', questions: 41 },
-  { grade: 'Grade 7', subject: 'English', title: 'Reading Comprehension', status: 'Published', questions: 33 },
-];
-
-const reviewQueue = [
-  { type: 'MCQ', subject: 'Science', issue: 'Needs better explanation', score: 82 },
-  { type: 'FIB', subject: 'Islamic Studies', issue: 'Clean output', score: 96 },
-  { type: 'HOQ', subject: 'Math', issue: 'Check difficulty level', score: 74 },
-  { type: 'TF', subject: 'Arabic', issue: 'Possible duplicate', score: 68 },
 ];
 
 const students = [
@@ -112,10 +98,10 @@ function Dashboard({ user, setActive }) {
         <div>
           <p className="eyebrow">Premium PC Admin</p>
           <h2>Manage app content, AI quiz generation, students, and subscriptions from one URL.</h2>
-          <p>Upload files now saves to Firebase Storage and creates a Firestore record for admin processing.</p>
+          <p>Upload files, approve them, publish Learning Packs, and prepare content for the student app.</p>
           <div className="hero-actions">
             <button className="primary-button" onClick={() => setActive('content')}>Open Upload Manager</button>
-            <button className="secondary-button"><Sparkles size={18} /> Generate Quiz</button>
+            <button className="secondary-button" onClick={() => setActive('generation')}><Sparkles size={18} /> Review AI Queue</button>
           </div>
         </div>
         <div className="hero-visual"><GraduationCap size={74} /></div>
@@ -127,6 +113,11 @@ function Dashboard({ user, setActive }) {
       </div>
 
       <div className="panel-card wide">
+        <div className="panel-header"><div><p className="eyebrow">Published Content</p><h3>Live Learning Packs</h3></div><span className="badge success">learning_packs</span></div>
+        <LearningPackList />
+      </div>
+
+      <div className="panel-card wide">
         <div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Latest Uploads & Review Status</h3></div><span className="badge warning">admin_uploads</span></div>
         <UploadList />
       </div>
@@ -134,8 +125,6 @@ function Dashboard({ user, setActive }) {
       <div className="stats-grid wide">
         {stats.map((stat) => { const Icon = stat.icon; return <div className="stat-card" key={stat.label}><div className="stat-icon"><Icon size={22} /></div><div className="stat-value">{stat.value}</div><div className="stat-label">{stat.label}</div><div className="stat-change">{stat.change}</div></div>; })}
       </div>
-      <div className="panel-card"><div className="panel-header"><h3>Recent Learning Packs</h3><button className="text-button">View all</button></div><PackTable /></div>
-      <div className="panel-card"><div className="panel-header"><h3>AI Quality Queue</h3><span className="badge warning">Live soon</span></div><ReviewList /></div>
     </section>
   );
 }
@@ -148,10 +137,13 @@ function ContentManager({ user }) {
         <AdminUpload user={user} />
       </div>
       <div className="panel-card wide">
-        <div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Uploaded Sources</h3></div><span className="badge warning">Approve / Reject</span></div>
+        <div className="panel-header"><div><p className="eyebrow">Published Content</p><h3>Learning Packs</h3></div><span className="badge success">Show / Hide</span></div>
+        <LearningPackList />
+      </div>
+      <div className="panel-card wide">
+        <div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Uploaded Sources</h3></div><span className="badge warning">Approve / Publish / Reject</span></div>
         <UploadList />
       </div>
-      <div className="panel-card wide"><PackTable /></div>
     </section>
   );
 }
@@ -169,15 +161,7 @@ function Subscriptions() {
 }
 
 function SettingsPanel() {
-  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><h3>Deployment Settings</h3><span className="badge">Firebase Auth</span></div><div className="settings-list"><SettingItem title="Firebase web login" body="Email/password and Google login are enabled in the web admin shell." /><SettingItem title="Firebase upload" body="Admin uploads save files to Firebase Storage and metadata to Firestore collection admin_uploads." /><SettingItem title="Admin permission" body="Use VITE_ADMIN_EMAILS or Firestore collection admin_users/{uid} with active=true and role=admin/editor/super_admin." /></div></div></section>;
-}
-
-function PackTable() {
-  return <div className="table-wrap"><table><thead><tr><th>Grade</th><th>Subject</th><th>Learning Pack</th><th>Status</th><th>Questions</th></tr></thead><tbody>{packs.map((pack) => <tr key={pack.title}><td>{pack.grade}</td><td>{pack.subject}</td><td>{pack.title}</td><td><span className={`badge ${pack.status.toLowerCase()}`}>{pack.status}</span></td><td>{pack.questions}</td></tr>)}</tbody></table></div>;
-}
-
-function ReviewList({ expanded = false }) {
-  return <div className="review-list">{reviewQueue.map((item) => <div className="review-item" key={`${item.type}-${item.subject}`}><div className="review-icon"><Brain size={20} /></div><div><strong>{item.subject} • {item.type}</strong><p>{item.issue}</p></div><div className="score-badge">{item.score}%</div>{expanded && <button className="small-button"><CheckCircle2 size={15} /> Approve</button>}</div>)}</div>;
+  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><h3>Deployment Settings</h3><span className="badge">Firebase Auth</span></div><div className="settings-list"><SettingItem title="Firebase web login" body="Email/password and Google login are enabled in the web admin shell." /><SettingItem title="Firebase upload" body="Admin uploads save files to Firebase Storage and metadata to Firestore collection admin_uploads." /><SettingItem title="Learning Pack publish" body="Approved uploads can be published into Firestore collection learning_packs for the student app." /></div></div></section>;
 }
 
 function PlanBox({ title, price, features, highlighted = false }) {
