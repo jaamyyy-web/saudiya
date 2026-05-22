@@ -131,6 +131,13 @@ ul { padding-left: 20px; margin-bottom: 0; color: #475569; line-height: 1.9; fon
 .empty-review-card { display: grid; place-items: center; text-align: center; gap: 9px; padding: 34px 18px; border-radius: 24px; background: #f8fafc; border: 1px dashed #cbd5e1; color: #475569; }
 .empty-review-card strong { color: #172033; }
 .empty-review-card p { max-width: 560px; margin: 0; font-size: 13px; line-height: 1.6; font-weight: 700; }
+.student-live-wrap { display: grid; gap: 14px; }
+.student-search-row { height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 18px; background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; }
+.student-search-row input { border: 0; outline: 0; width: 100%; background: transparent; color: #172033; font-weight: 750; }
+.student-live-list { display: grid; gap: 12px; }
+.student-live-row { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 15px; border-radius: 22px; background: #f8fafc; border: 1px solid #e2e8f0; }
+.student-live-main { min-width: 0; }
+.student-live-main p { margin: 3px 0 0; color: #64748b; font-size: 12px; font-weight: 700; line-height: 1.45; }
 
 @media (max-width: 1100px) {
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -151,7 +158,7 @@ ul { padding-left: 20px; margin-bottom: 0; color: #475569; line-height: 1.9; fon
   .stats-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
   .upload-submit { width: 100%; }
-  .upload-row, .learning-pack-row { grid-template-columns: 1fr; }
+  .upload-row, .learning-pack-row, .student-live-row { grid-template-columns: 1fr; }
   .upload-row-actions { justify-content: stretch; }
   .upload-row-actions > * { flex: 1; }
   .question-review-top { display: grid; }
