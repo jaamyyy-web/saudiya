@@ -33,32 +33,25 @@ npm run build
 npm run preview
 ```
 
-## Deploy to Vercel as a separate URL
+## Firebase Hosting deployment
 
-Create a new Vercel project from the same GitHub repo and use these settings:
+This admin panel is prepared for Firebase Hosting.
+
+Firebase Hosting config is at the repo root:
 
 ```text
-Root Directory: web-admin
-Framework Preset: Vite
-Build Command: npm run build
-Output Directory: dist
-Install Command: npm install
+firebase.json
 ```
 
-This will give a separate admin panel URL without affecting the Android app.
+It serves:
 
-## Firebase Web Auth setup
-
-The web admin now supports Firebase login using:
-
-- Email/password login
-- Google popup login
-- Admin email allow-list
-- Optional Firestore admin role check
+```text
+web-admin/dist
+```
 
 ### Step 1: Create Firebase Web App
 
-In the same Firebase project used by the Android app:
+Use the same Firebase project as the Android app:
 
 ```text
 Firebase Console → Project Settings → Your apps → Add app → Web
@@ -66,9 +59,16 @@ Firebase Console → Project Settings → Your apps → Add app → Web
 
 Copy the Firebase web config values.
 
-### Step 2: Add Vercel environment variables
+### Step 2: Create production env file
 
-In the Vercel project for this admin panel, add:
+Copy:
+
+```bash
+cd web-admin
+cp .env.example .env.production
+```
+
+Then edit `web-admin/.env.production`:
 
 ```text
 VITE_FIREBASE_API_KEY=...
@@ -97,7 +97,29 @@ Email/Password
 Google
 ```
 
-### Step 4: Add authorised domain
+### Step 4: Build and deploy
+
+From repo root:
+
+```bash
+cd web-admin
+npm install
+npm run build
+cd ..
+npm install -g firebase-tools
+firebase login
+firebase use --add
+firebase deploy --only hosting
+```
+
+Firebase will give URLs like:
+
+```text
+https://your-project-id.web.app
+https://your-project-id.firebaseapp.com
+```
+
+### Step 5: Add authorised domain
 
 In Firebase Console:
 
@@ -105,10 +127,11 @@ In Firebase Console:
 Authentication → Settings → Authorised domains
 ```
 
-Add your Vercel admin URL domain, for example:
+Add your Firebase Hosting domain if it is not already listed:
 
 ```text
-your-admin-panel.vercel.app
+your-project-id.web.app
+your-project-id.firebaseapp.com
 ```
 
 ### Optional Firestore admin role check
