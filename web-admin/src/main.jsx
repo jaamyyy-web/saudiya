@@ -7,13 +7,14 @@ import UploadList from './UploadList.jsx';
 import LearningPackList from './LearningPackList.jsx';
 import QuestionReviewList from './QuestionReviewList.jsx';
 import GenerationJobList from './GenerationJobList.jsx';
+import StudentList from './StudentList.jsx';
 import './styles.css';
 
 const stats = [
-  { label: 'Students', value: '12,480', change: '+18%', icon: Users },
+  { label: 'Students', value: 'Live', change: 'From Firestore', icon: Users },
   { label: 'Learning Packs', value: 'Live', change: 'From Firestore', icon: BookOpen },
   { label: 'Pending Reviews', value: 'Live', change: 'Questions + uploads', icon: FileText },
-  { label: 'Premium Users', value: '2,138', change: '+9%', icon: Crown },
+  { label: 'Premium Users', value: 'Live', change: 'Subscriptions soon', icon: Crown },
 ];
 
 const navItems = [
@@ -23,13 +24,6 @@ const navItems = [
   { id: 'students', label: 'Students', icon: Users },
   { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
   { id: 'settings', label: 'Settings', icon: Settings },
-];
-
-const students = [
-  { name: 'Ahmed Al Harbi', grade: 'Grade 7', plan: 'Premium', progress: 78, streak: 8 },
-  { name: 'Sara Mohammed', grade: 'Grade 8', plan: 'Free', progress: 34, streak: 2 },
-  { name: 'Fahad Saleh', grade: 'Grade 9', plan: 'Family', progress: 91, streak: 21 },
-  { name: 'Noura Ali', grade: 'Grade 7', plan: 'Premium', progress: 66, streak: 5 },
 ];
 
 function App({ user, logout }) {
@@ -70,7 +64,7 @@ function App({ user, logout }) {
 
 function Dashboard({ user, setActive }) {
   return <section className="page-grid">
-    <div className="hero-card wide"><div><p className="eyebrow">Premium PC Admin</p><h2>Manage app content, quiz generation, students, and subscriptions from one URL.</h2><p>Upload files, approve them, publish Learning Packs, queue generation jobs, and review generated questions.</p><div className="hero-actions"><button className="primary-button" onClick={() => setActive('content')}>Open Upload Manager</button><button className="secondary-button" onClick={() => setActive('generation')}><Sparkles size={18} /> Review Queue</button></div></div><div className="hero-visual"><GraduationCap size={74} /></div></div>
+    <div className="hero-card wide"><div><p className="eyebrow">Premium PC Admin</p><h2>Manage app content, quiz generation, students, and subscriptions from one URL.</h2><p>Upload files, publish Learning Packs, queue generation jobs, review questions, and manage students.</p><div className="hero-actions"><button className="primary-button" onClick={() => setActive('content')}>Open Upload Manager</button><button className="secondary-button" onClick={() => setActive('generation')}><Sparkles size={18} /> Review Queue</button></div></div><div className="hero-visual"><GraduationCap size={74} /></div></div>
     <div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Firebase Upload</p><h3>Quick Upload</h3></div><span className="badge success">Storage + Firestore</span></div><AdminUpload user={user} /></div>
     <div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Published Content</p><h3>Live Learning Packs</h3></div><span className="badge success">learning_packs</span></div><LearningPackList /></div>
     <div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Latest Uploads & Review Status</h3></div><span className="badge warning">admin_uploads</span></div><UploadList /></div>
@@ -78,17 +72,11 @@ function Dashboard({ user, setActive }) {
   </section>;
 }
 
-function ContentManager({ user }) {
-  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Content</p><h3>Upload Learning Pack Source</h3></div><span className="badge success">Firebase connected</span></div><AdminUpload user={user} /></div><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Published Content</p><h3>Learning Packs</h3></div><span className="badge success">Show / Hide</span></div><LearningPackList /></div><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Uploaded Sources</h3></div><span className="badge warning">Approve / Publish / Reject</span></div><UploadList /></div></section>;
-}
-
-function QuizReview() {
-  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Pipeline</p><h3>Generation Jobs Monitor</h3></div><span className="badge warning">generation_jobs</span></div><GenerationJobList /></div><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Gold Rubric</p><h3>Question Review Bank</h3></div><span className="badge success">questions</span></div><QuestionReviewList /></div><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Source Queue</p><h3>Uploads Waiting for Generation</h3></div><span className="badge warning">admin_uploads</span></div><UploadList /></div></section>;
-}
-
-function Students() { return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><h3>Students</h3><span className="badge success">Live analytics</span></div><div className="student-list">{students.map((student) => <div className="student-row" key={student.name}><div className="avatar">{student.name.charAt(0)}</div><div><strong>{student.name}</strong><p>{student.grade} • {student.plan} • {student.streak} day streak</p></div><div className="progress-pill">{student.progress}%</div></div>)}</div></div></section>; }
+function ContentManager({ user }) { return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Content</p><h3>Upload Learning Pack Source</h3></div><span className="badge success">Firebase connected</span></div><AdminUpload user={user} /></div><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Published Content</p><h3>Learning Packs</h3></div><span className="badge success">Show / Hide</span></div><LearningPackList /></div><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Uploaded Sources</h3></div><span className="badge warning">Approve / Publish / Reject</span></div><UploadList /></div></section>; }
+function QuizReview() { return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Pipeline</p><h3>Generation Jobs Monitor</h3></div><span className="badge warning">generation_jobs</span></div><GenerationJobList /></div><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Gold Rubric</p><h3>Question Review Bank</h3></div><span className="badge success">questions</span></div><QuestionReviewList /></div><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Source Queue</p><h3>Uploads Waiting for Generation</h3></div><span className="badge warning">admin_uploads</span></div><UploadList /></div></section>; }
+function Students() { return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Students</h3></div><span className="badge success">students</span></div><StudentList /></div></section>; }
 function Subscriptions() { return <section className="page-grid"><PlanBox title="Free" price="0 SAR" features={['First learning pack free', 'Limited quizzes', 'Basic progress']} /><PlanBox title="Single Premium" price="39 SAR" highlighted features={['All packs unlocked', 'Unlimited quizzes', 'Smart analytics', '2 devices']} /><PlanBox title="Family Premium" price="99 SAR" features={['4 student profiles', 'Parent dashboard', '6 devices', 'Family reports']} /></section>; }
-function SettingsPanel() { return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><h3>Deployment Settings</h3><span className="badge">Firebase Auth</span></div><div className="settings-list"><SettingItem title="Firebase web login" body="Email/password and Google login are enabled in the web admin shell." /><SettingItem title="Firebase upload" body="Admin uploads save files to Firebase Storage and metadata to Firestore collection admin_uploads." /><SettingItem title="Generation jobs" body="Queue button creates Firestore documents in generation_jobs for backend processing." /><SettingItem title="Question review bank" body="Generated questions can be reviewed from Firestore collection questions before publishing to students." /></div></div></section>; }
+function SettingsPanel() { return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><h3>Deployment Settings</h3><span className="badge">Firebase Auth</span></div><div className="settings-list"><SettingItem title="Firebase web login" body="Email/password and Google login are enabled in the web admin shell." /><SettingItem title="Firebase upload" body="Admin uploads save files to Firebase Storage and metadata to Firestore collection admin_uploads." /><SettingItem title="Students list" body="Students page reads live records from Firestore collection students." /><SettingItem title="Generation jobs" body="Queue button creates Firestore documents in generation_jobs for backend processing." /></div></div></section>; }
 function PlanBox({ title, price, features, highlighted = false }) { return <div className={`plan-box ${highlighted ? 'highlighted' : ''}`}><div className="plan-icon">{highlighted ? <Crown size={28} /> : <Lock size={28} />}</div><h3>{title}</h3><div className="plan-price">{price}</div><ul>{features.map((item) => <li key={item}>{item}</li>)}</ul></div>; }
 function SettingItem({ title, body }) { return <div className="setting-item"><strong>{title}</strong><p>{body}</p></div>; }
 
