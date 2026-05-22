@@ -138,6 +138,11 @@ ul { padding-left: 20px; margin-bottom: 0; color: #475569; line-height: 1.9; fon
 .student-live-row { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 15px; border-radius: 22px; background: #f8fafc; border: 1px solid #e2e8f0; }
 .student-live-main { min-width: 0; }
 .student-live-main p { margin: 3px 0 0; color: #64748b; font-size: 12px; font-weight: 700; line-height: 1.45; }
+.subscription-live-list { display: grid; gap: 12px; }
+.subscription-live-row { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 15px; border-radius: 22px; background: #f8fafc; border: 1px solid #e2e8f0; }
+.subscription-icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 16px; color: #92400e; background: #fef3c7; }
+.subscription-live-main { min-width: 0; }
+.subscription-live-main p { margin: 3px 0 0; color: #64748b; font-size: 12px; font-weight: 700; line-height: 1.45; }
 
 @media (max-width: 1100px) {
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -158,7 +163,7 @@ ul { padding-left: 20px; margin-bottom: 0; color: #475569; line-height: 1.9; fon
   .stats-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
   .upload-submit { width: 100%; }
-  .upload-row, .learning-pack-row, .student-live-row { grid-template-columns: 1fr; }
+  .upload-row, .learning-pack-row, .student-live-row, .subscription-live-row { grid-template-columns: 1fr; }
   .upload-row-actions { justify-content: stretch; }
   .upload-row-actions > * { flex: 1; }
   .question-review-top { display: grid; }
