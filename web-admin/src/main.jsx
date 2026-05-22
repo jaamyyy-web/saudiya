@@ -20,12 +20,13 @@ import {
 } from 'lucide-react';
 import AuthGate from './AuthGate.jsx';
 import AdminUpload from './AdminUpload.jsx';
+import UploadList from './UploadList.jsx';
 import './styles.css';
 
 const stats = [
   { label: 'Students', value: '12,480', change: '+18%', icon: Users },
   { label: 'Learning Packs', value: '326', change: '+42', icon: BookOpen },
-  { label: 'Pending Reviews', value: '74', change: 'Needs action', icon: FileText },
+  { label: 'Pending Reviews', value: 'Live', change: 'From uploads', icon: FileText },
   { label: 'Premium Users', value: '2,138', change: '+9%', icon: Crown },
 ];
 
@@ -125,11 +126,16 @@ function Dashboard({ user, setActive }) {
         <AdminUpload user={user} />
       </div>
 
+      <div className="panel-card wide">
+        <div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Latest Uploads & Review Status</h3></div><span className="badge warning">admin_uploads</span></div>
+        <UploadList />
+      </div>
+
       <div className="stats-grid wide">
         {stats.map((stat) => { const Icon = stat.icon; return <div className="stat-card" key={stat.label}><div className="stat-icon"><Icon size={22} /></div><div className="stat-value">{stat.value}</div><div className="stat-label">{stat.label}</div><div className="stat-change">{stat.change}</div></div>; })}
       </div>
       <div className="panel-card"><div className="panel-header"><h3>Recent Learning Packs</h3><button className="text-button">View all</button></div><PackTable /></div>
-      <div className="panel-card"><div className="panel-header"><h3>AI Quality Queue</h3><span className="badge warning">74 pending</span></div><ReviewList /></div>
+      <div className="panel-card"><div className="panel-header"><h3>AI Quality Queue</h3><span className="badge warning">Live soon</span></div><ReviewList /></div>
     </section>
   );
 }
@@ -141,13 +147,17 @@ function ContentManager({ user }) {
         <div className="panel-header"><div><p className="eyebrow">Content</p><h3>Upload Learning Pack Source</h3></div><span className="badge success">Firebase connected</span></div>
         <AdminUpload user={user} />
       </div>
+      <div className="panel-card wide">
+        <div className="panel-header"><div><p className="eyebrow">Live Firestore</p><h3>Uploaded Sources</h3></div><span className="badge warning">Approve / Reject</span></div>
+        <UploadList />
+      </div>
       <div className="panel-card wide"><PackTable /></div>
     </section>
   );
 }
 
 function QuizReview() {
-  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Gold Rubric</p><h3>AI Quiz Review Queue</h3></div><button className="secondary-button"><Brain size={18} /> Generate More</button></div><ReviewList expanded /></div></section>;
+  return <section className="page-grid"><div className="panel-card wide"><div className="panel-header"><div><p className="eyebrow">Gold Rubric</p><h3>AI Quiz Review Queue</h3></div><button className="secondary-button"><Brain size={18} /> Generate More</button></div><UploadList /></div></section>;
 }
 
 function Students() {
