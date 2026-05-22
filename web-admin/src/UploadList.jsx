@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { collection, limit, onSnapshot, orderBy, query, updateDoc, doc } from 'firebase/firestore';
-import { CheckCircle2, ExternalLink, FileText, RefreshCw, XCircle } from 'lucide-react';
+import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { CheckCircle2, ExternalLink, FileText, RefreshCw, Send, XCircle } from 'lucide-react';
 import { db } from './firebase';
 
 function formatDate(value) {
@@ -9,16 +9,24 @@ function formatDate(value) {
 }
 
 function statusClass(status) {
-  if (status === 'approved' || status === 'published') return 'success';
+  if (status === 'approved' || status === 'published' || status === 'ready_to_publish') return 'success';
   if (status === 'rejected') return 'error';
   if (status === 'queued_for_review' || status === 'draft') return 'warning';
   return '';
+}
+
+function makeSlug(value = '') {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || `pack-${Date.now()}`;
 }
 
 export default function UploadList() {
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [busyId, setBusyId] = useState('');
 
   useEffect(() => {
     if (!db) {
@@ -44,11 +52,53 @@ export default function UploadList() {
   }, []);
 
   async function updateReviewStatus(uploadId, reviewStatus) {
-    await updateDoc(doc(db, 'admin_uploads', uploadId), {
-      reviewStatus,
-      aiGenerationStatus: reviewStatus === 'approved' ? 'ready_to_publish' : reviewStatus,
-      updatedAt: new Date(),
-    });
+    setBusyId(uploadId);
+    try {
+      await updateDoc(doc(db, 'admin_uploads', uploadId), {
+        reviewStatus,
+        aiGenerationStatus: reviewStatus === 'approved' ? 'ready_to_publish' : reviewStatus,
+        updatedAt: serverTimestamp(),
+      });
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function publishLearningPack(item) {
+    setBusyId(item.id);
+    try {
+      const packRef = await addDoc(collection(db, 'learning_packs'), {
+        title: item.title || item.fileName || 'Untitled Learning Pack',
+        slug: makeSlug(`${item.grade}-${item.subject}-${item.title || item.fileName}`),
+        grade: item.grade,
+        subject: item.subject,
+        medium: item.medium,
+        difficulty: item.difficulty || 'Mixed',
+        generationStyle: item.generationStyle || 'Exam Paper',
+        bloomLevel: item.bloomLevel || 'Mixed',
+        questionCounts: item.questionCounts || { mcq: 0, fib: 0, trueFalse: 0, hoq: 0 },
+        summaryStatus: 'pending',
+        quizStatus: 'pending_generation',
+        status: 'published',
+        sourceUploadId: item.id,
+        sourceFileName: item.fileName || null,
+        sourceStoragePath: item.storagePath || null,
+        sourceDownloadURL: item.downloadURL || null,
+        createdFrom: 'admin_uploads',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      await updateDoc(doc(db, 'admin_uploads', item.id), {
+        reviewStatus: 'published',
+        aiGenerationStatus: 'published_to_learning_packs',
+        learningPackId: packRef.id,
+        publishedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } finally {
+      setBusyId('');
+    }
   }
 
   if (loading) {
@@ -65,38 +115,46 @@ export default function UploadList() {
 
   return (
     <div className="upload-list">
-      {uploads.map((item) => (
-        <div className="upload-row" key={item.id}>
-          <div className="upload-file-icon"><FileText size={20} /></div>
-          <div className="upload-row-main">
-            <div className="upload-row-title">
-              <strong>{item.title || item.fileName || 'Untitled upload'}</strong>
-              <span className={`badge ${statusClass(item.reviewStatus || item.aiGenerationStatus || item.status)}`}>
-                {item.reviewStatus || item.aiGenerationStatus || item.status || 'uploaded'}
-              </span>
+      {uploads.map((item) => {
+        const currentStatus = item.reviewStatus || item.aiGenerationStatus || item.status || 'uploaded';
+        const canPublish = currentStatus === 'approved' || currentStatus === 'ready_to_publish';
+        const isBusy = busyId === item.id;
+
+        return (
+          <div className="upload-row" key={item.id}>
+            <div className="upload-file-icon"><FileText size={20} /></div>
+            <div className="upload-row-main">
+              <div className="upload-row-title">
+                <strong>{item.title || item.fileName || 'Untitled upload'}</strong>
+                <span className={`badge ${statusClass(currentStatus)}`}>{currentStatus}</span>
+              </div>
+              <p>
+                {item.grade} • {item.subject} • {item.medium} • {item.generationStyle || 'Exam Paper'} • {formatDate(item.createdAt)}
+              </p>
+              <p>
+                MCQ {item.questionCounts?.mcq ?? 0} / FIB {item.questionCounts?.fib ?? 0} / TF {item.questionCounts?.trueFalse ?? 0} / HOQ {item.questionCounts?.hoq ?? 0}
+              </p>
+              {item.learningPackId && <p>Learning Pack ID: {item.learningPackId}</p>}
             </div>
-            <p>
-              {item.grade} • {item.subject} • {item.medium} • {item.generationStyle || 'Exam Paper'} • {formatDate(item.createdAt)}
-            </p>
-            <p>
-              MCQ {item.questionCounts?.mcq ?? 0} / FIB {item.questionCounts?.fib ?? 0} / TF {item.questionCounts?.trueFalse ?? 0} / HOQ {item.questionCounts?.hoq ?? 0}
-            </p>
+            <div className="upload-row-actions">
+              {item.downloadURL && (
+                <a className="small-link-button" href={item.downloadURL} target="_blank" rel="noreferrer">
+                  <ExternalLink size={15} /> File
+                </a>
+              )}
+              <button className="small-button" disabled={isBusy} onClick={() => updateReviewStatus(item.id, 'approved')}>
+                <CheckCircle2 size={15} /> Approve
+              </button>
+              <button className="small-publish-button" disabled={!canPublish || isBusy} onClick={() => publishLearningPack(item)}>
+                <Send size={15} /> Publish
+              </button>
+              <button className="small-danger-button" disabled={isBusy} onClick={() => updateReviewStatus(item.id, 'rejected')}>
+                <XCircle size={15} /> Reject
+              </button>
+            </div>
           </div>
-          <div className="upload-row-actions">
-            {item.downloadURL && (
-              <a className="small-link-button" href={item.downloadURL} target="_blank" rel="noreferrer">
-                <ExternalLink size={15} /> File
-              </a>
-            )}
-            <button className="small-button" onClick={() => updateReviewStatus(item.id, 'approved')}>
-              <CheckCircle2 size={15} /> Approve
-            </button>
-            <button className="small-danger-button" onClick={() => updateReviewStatus(item.id, 'rejected')}>
-              <XCircle size={15} /> Reject
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
