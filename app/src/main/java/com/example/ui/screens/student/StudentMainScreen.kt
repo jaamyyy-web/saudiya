@@ -14,7 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.StudentHomeScreen
 import com.example.ui.theme.BottomNavActiveBg
 import com.example.ui.theme.SurfaceContainerLowLight
 
@@ -34,7 +33,7 @@ fun StudentMainScreen(rootNavController: NavController) {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                "home" -> StudentHomeScreen(rootNavController)
+                "home" -> PremiumStudentHomeScreen(rootNavController)
                 "subjects" -> SubjectsScreen(rootNavController)
                 "practice" -> com.example.ui.screens.student.analytics.AnalyticsScreen(rootNavController)
                 "leaderboard" -> com.example.ui.screens.student.leaderboard.LeaderboardScreen(rootNavController)
