@@ -15,4 +15,10 @@
 .cxx
 local.properties
 .env
+.env.*
+web-admin/.env.local
+web-admin/.env.production
+web-admin/.env.development
+web-admin/dist
+web-admin/node_modules
 debug.keystore
