@@ -10,6 +10,7 @@ import {
 import { doc, getDoc } from 'firebase/firestore';
 import { Lock, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { auth, db, firebaseConfigMissing, getAllowedAdminEmails, googleProvider, missingFirebaseKeys } from './firebase';
+import './auth.css';
 
 async function checkAdminAccess(user) {
   const allowedEmails = getAllowedAdminEmails();
