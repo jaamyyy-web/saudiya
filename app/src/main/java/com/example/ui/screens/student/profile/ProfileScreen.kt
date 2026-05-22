@@ -13,8 +13,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -32,16 +34,16 @@ fun ProfileScreen(navController: NavController) {
 
     val subscriptionText = when (subscriptionState.currentPlanType) {
         SubscriptionPlanType.FREE -> "مجاني"
-        SubscriptionPlanType.SINGLE_USER -> "حساب فردي (Premium)"
-        SubscriptionPlanType.FAMILY -> "حساب العائلة (Premium)"
+        SubscriptionPlanType.SINGLE_USER -> "Premium فردي"
+        SubscriptionPlanType.FAMILY -> "Premium عائلي"
     }
-
     val isPremium = subscriptionState.currentPlanType != SubscriptionPlanType.FREE
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("حسابي") },
+                title = { Text("حسابي", fontWeight = FontWeight.ExtraBold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
@@ -51,130 +53,143 @@ fun ProfileScreen(navController: NavController) {
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Avatar & Name
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(userProfile.avatar, fontSize = 50.sp)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(userProfile.name, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text(userProfile.grade, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (userProfile.schoolName.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text("🏫 ${userProfile.schoolName}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f))
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            Surface(
-                color = if (!isPremium) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFFFD700),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    text = "الاشتراك: $subscriptionText",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    fontSize = 14.sp,
-                    color = if (!isPremium) MaterialTheme.colorScheme.onSurfaceVariant else Color.Black,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            ProfileHeroCard(
+                avatar = userProfile.avatar,
+                name = userProfile.name.ifBlank { "طالب جديد" },
+                grade = userProfile.grade.ifBlank { "اختر الصف الدراسي" },
+                schoolName = userProfile.schoolName,
+                subscriptionText = subscriptionText,
+                isPremium = isPremium
+            )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Gamification Stats
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ProfileStatCard(modifier = Modifier.weight(1f), icon = "⭐", value = "${gamificationState.xp}", label = "XP")
-                ProfileStatCard(modifier = Modifier.weight(1f), icon = "🔥", value = "${gamificationState.dailyStreak}", label = "أيام متتالية")
+                ProfileStatCard(modifier = Modifier.weight(1f), icon = "🔥", value = "${gamificationState.dailyStreak}", label = "أيام")
                 ProfileStatCard(modifier = Modifier.weight(1f), icon = "👑", value = "${gamificationState.level}", label = "المستوى")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Learning Stats
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                ProfileStatCard(modifier = Modifier.weight(1f), icon = "⏱️", value = "${userProfile.studyTimeHours}h", label = "وقت الدراسة")
-                ProfileStatCard(modifier = Modifier.weight(1f), icon = "📈", value = "%${userProfile.masteryPercentage}", label = "الإتقان")
-                ProfileStatCard(modifier = Modifier.weight(1f), icon = "📚", value = "${userProfile.completedPacks}", label = "حزم مكتملة")
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ProfileStatCard(modifier = Modifier.weight(1f), icon = "⏱️", value = "${userProfile.studyTimeHours}h", label = "دراسة")
+                ProfileStatCard(modifier = Modifier.weight(1f), icon = "📈", value = "%${userProfile.masteryPercentage}", label = "إتقان")
+                ProfileStatCard(modifier = Modifier.weight(1f), icon = "📚", value = "${userProfile.completedPacks}", label = "حزم")
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            ProfileBadgesPreview(navController = navController)
 
-            // Badges Preview
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("أحدث الشارات", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                TextButton(onClick = { navController.navigate("rewards") }) {
-                    Text("عرض الكل")
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                gamificationState.badges.filter { it.unlocked }.take(3).forEach { badge ->
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                        modifier = Modifier.size(80.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(badge.icon, fontSize = 32.sp)
-                        }
-                    }
-                }
-                if (gamificationState.badges.none { it.unlocked }) {
-                    Text("لم يتم فتح أي شارة بعد.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            Button(
-                onClick = { navController.navigate("analytics") },
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-            ) {
-                Text("عرض التحليلات المتقدمة", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-            
+            ProfileActionCard(
+                title = "تحليلات الأداء",
+                subtitle = "شاهد مستوى التقدم ونقاط القوة والضعف",
+                icon = "📊",
+                buttonText = "عرض التحليلات",
+                onClick = { navController.navigate("analytics") }
+            )
+
             if (!isPremium) {
-                Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = { navController.navigate("subscription_plans") },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(58.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700), contentColor = Color.Black)
                 ) {
-                    Text("الترقية إلى Premium", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("الترقية إلى Premium 👑", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                 }
             } else {
-                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedButton(
                     onClick = { navController.navigate("manage_subscription") },
-                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(18.dp)
                 ) {
-                    Text("إدارة الاشتراك", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("إدارة الاشتراك", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                 }
             }
-            
+
             if (subscriptionState.isFamilyParent) {
-                Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = { navController.navigate("parent_dashboard") },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
-                    Text("لوحة تحكم ولي الأمر", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("لوحة تحكم ولي الأمر", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                 }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun ProfileHeroCard(
+    avatar: String,
+    name: String,
+    grade: String,
+    schoolName: String,
+    subscriptionText: String,
+    isPremium: Boolean
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(30.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                    )
+                )
+            )
+            .padding(20.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(110.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = (-30).dp, y = 30.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.22f))
+        )
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .size(98.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.55f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(avatar, fontSize = 50.sp)
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(name, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimaryContainer, textAlign = TextAlign.Center)
+            Text(grade, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+
+            if (schoolName.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("🏫 $schoolName", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f), textAlign = TextAlign.Center)
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Surface(
+                color = if (isPremium) Color(0xFFFFD700) else Color.White.copy(alpha = 0.55f),
+                shape = RoundedCornerShape(18.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.45f))
+            ) {
+                Text(
+                    text = if (isPremium) "👑 $subscriptionText" else "الاشتراك: $subscriptionText",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                    fontSize = 13.sp,
+                    color = if (isPremium) Color.Black else MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.ExtraBold
+                )
             }
         }
     }
@@ -182,19 +197,103 @@ fun ProfileScreen(navController: NavController) {
 
 @Composable
 fun ProfileStatCard(modifier: Modifier = Modifier, icon: String, value: String, label: String) {
-    Card(
+    Surface(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(vertical = 14.dp, horizontal = 8.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             Text(icon, fontSize = 24.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center)
+            Text(label, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        }
+    }
+}
+
+@Composable
+private fun ProfileBadgesPreview(navController: NavController) {
+    val gamificationState by GamificationManager.state.collectAsState()
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("أحدث الشارات", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+                    Text("اكسب شارات جديدة مع كل إنجاز", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                TextButton(onClick = { navController.navigate("rewards") }) {
+                    Text("عرض الكل", fontWeight = FontWeight.ExtraBold)
+                }
+            }
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                val unlocked = gamificationState.badges.filter { it.unlocked }.take(3)
+                if (unlocked.isEmpty()) {
+                    Text("لم يتم فتح أي شارة بعد.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                } else {
+                    unlocked.forEach { badge ->
+                        Surface(
+                            modifier = Modifier.size(78.dp).weight(1f),
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFFFFF7ED),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(badge.icon, fontSize = 33.sp)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileActionCard(title: String, subtitle: String, icon: String, buttonText: String, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFFFFF7ED),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFFFEDD5)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(icon, fontSize = 25.sp)
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF9A3412))
+                Text(subtitle, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF9A3412), lineHeight = 18.sp)
+            }
+            TextButton(onClick = onClick) {
+                Text(buttonText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF9A3412))
+            }
         }
     }
 }
