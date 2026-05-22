@@ -5,7 +5,19 @@ import { FileText, UploadCloud, X } from 'lucide-react';
 import { db, storage } from './firebase';
 
 const grades = ['Grade 7', 'Grade 8', 'Grade 9'];
-const subjects = ['Islamic Studies', 'Science', 'Math', 'English', 'Arabic', 'Social Studies'];
+const subjects = [
+  'Islamic Studies',
+  'Arabic Language',
+  'English Language',
+  'Mathematics',
+  'Science',
+  'Social Studies',
+  'Digital Skills',
+  'Life and Family Skills',
+  'Art Education',
+  'Physical and Health Education',
+  'Critical Thinking',
+];
 const mediums = ['Arabic', 'English', 'Arabic Support'];
 
 export default function AdminUpload({ user }) {
