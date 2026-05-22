@@ -9,8 +9,9 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; min-height: 100vh; background: #f5f7fb; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { cursor: pointer; border: none; }
+button:disabled { opacity: .55; cursor: not-allowed; }
 
 .app-shell { display: flex; min-height: 100vh; background: radial-gradient(circle at top left, #e7fff3 0, transparent 32%), #f5f7fb; }
 .sidebar { width: 292px; padding: 22px; background: rgba(255,255,255,.86); border-right: 1px solid #e7edf4; backdrop-filter: blur(18px); display: flex; flex-direction: column; gap: 24px; position: sticky; top: 0; height: 100vh; z-index: 20; }
@@ -73,13 +74,28 @@ td { font-weight: 750; }
 .score-badge, .progress-pill { margin-left: auto; padding: 7px 10px; border-radius: 999px; color: #047857; background: #dcfce7; font-weight: 950; font-size: 12px; }
 .form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .admin-field { display: grid; gap: 7px; color: #64748b; font-size: 12px; font-weight: 900; }
-.admin-field input { height: 46px; border: 1px solid #e2e8f0; border-radius: 15px; padding: 0 12px; outline: 0; font-weight: 800; }
+.admin-field input, .admin-field select { height: 46px; border: 1px solid #e2e8f0; border-radius: 15px; padding: 0 12px; outline: 0; font-weight: 800; background: #fff; color: #172033; }
 .plan-box { padding: 24px; }
 .plan-box.highlighted { background: linear-gradient(135deg, #fef3c7, #fff); border-color: #fde68a; }
 .plan-icon { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 20px; color: #92400e; background: #fef3c7; margin-bottom: 16px; }
 .plan-price { font-size: 30px; font-weight: 950; margin: 14px 0; }
 ul { padding-left: 20px; margin-bottom: 0; color: #475569; line-height: 1.9; font-weight: 750; }
 .overlay { display: none; }
+
+.upload-manager { display: grid; gap: 14px; }
+.upload-drop { display: grid; place-items: center; gap: 9px; text-align: center; padding: 26px 18px; border: 2px dashed #a7f3d0; border-radius: 24px; background: linear-gradient(135deg, #f0fdf4, #ffffff); color: #047857; cursor: pointer; }
+.upload-drop strong { font-size: 16px; color: #172033; }
+.upload-drop p { margin: 0; color: #64748b; font-size: 13px; font-weight: 700; }
+.clear-file { justify-self: start; display: inline-flex; align-items: center; gap: 7px; border-radius: 12px; padding: 9px 12px; background: #fff1f2; color: #be123c; font-weight: 900; }
+.upload-form { margin-top: 4px; }
+.upload-progress { display: flex; align-items: center; gap: 12px; }
+.upload-progress > div { flex: 1; height: 12px; border-radius: 999px; overflow: hidden; background: #e2e8f0; }
+.upload-progress span { display: block; height: 100%; background: linear-gradient(135deg, #10b981, #0f766e); }
+.upload-message { padding: 12px 14px; border-radius: 16px; font-size: 13px; font-weight: 850; border: 1px solid #e2e8f0; background: #f8fafc; color: #475569; }
+.upload-message.success { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.upload-message.error { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.upload-message.uploading { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.upload-submit { min-height: 50px; justify-self: start; }
 
 @media (max-width: 1100px) {
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -99,4 +115,5 @@ ul { padding-left: 20px; margin-bottom: 0; color: #475569; line-height: 1.9; fon
   .hero-visual { min-height: 120px; }
   .stats-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
+  .upload-submit { width: 100%; }
 }
