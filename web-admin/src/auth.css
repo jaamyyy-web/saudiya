@@ -1,0 +1,94 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(16, 185, 129, .20), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(251, 191, 36, .18), transparent 35%),
+    #f5f7fb;
+}
+
+.auth-card {
+  width: min(100%, 500px);
+  padding: 34px;
+  border-radius: 34px;
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, .10);
+  backdrop-filter: blur(18px);
+}
+
+.auth-card.small { max-width: 420px; text-align: center; }
+.auth-card h1 { font-size: 34px; line-height: 1.05; margin: 8px 0 12px; }
+.auth-card p { color: #64748b; line-height: 1.65; font-weight: 650; }
+
+.auth-icon {
+  width: 66px;
+  height: 66px;
+  border-radius: 22px;
+  display: grid;
+  place-items: center;
+  color: #047857;
+  background: linear-gradient(135deg, #dcfce7, #ccfbf1);
+  margin-bottom: 16px;
+}
+
+.auth-icon.warning { color: #92400e; background: #fef3c7; }
+.auth-form { display: grid; gap: 14px; margin-top: 22px; }
+.auth-form label { display: grid; gap: 7px; color: #475569; font-size: 13px; font-weight: 900; }
+.auth-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 17px;
+  background: #fff;
+  color: #94a3b8;
+}
+.auth-input input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  color: #172033;
+  font-weight: 750;
+}
+.auth-submit, .auth-google { width: 100%; margin-top: 4px; }
+.auth-google { margin-top: 12px; height: 48px; }
+.auth-error {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+.allowed-box, .missing-box {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+.missing-box { display: grid; gap: 6px; }
+.missing-box code {
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 11px;
+}
+
+@media (max-width: 560px) {
+  .auth-card { padding: 24px; border-radius: 26px; }
+  .auth-card h1 { font-size: 28px; }
+}
