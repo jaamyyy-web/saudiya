@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-  BarChart3,
   BookOpen,
   Brain,
   CheckCircle2,
@@ -20,6 +19,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import AuthGate from './AuthGate.jsx';
 import './styles.css';
 
 const stats = [
@@ -59,7 +59,7 @@ const students = [
   { name: 'Noura Ali', grade: 'Grade 7', plan: 'Premium', progress: 66, streak: 5 },
 ];
 
-function App() {
+function App({ user, logout }) {
   const [active, setActive] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -101,8 +101,8 @@ function App() {
         <div className="sidebar-card">
           <ShieldCheck size={22} />
           <div>
-            <strong>Safe isolated build</strong>
-            <p>This web admin is separate from the Android app.</p>
+            <strong>Signed in securely</strong>
+            <p>{user?.email || 'Firebase admin account'}</p>
           </div>
         </div>
       </aside>
@@ -123,7 +123,7 @@ function App() {
               <Search size={17} />
               <input placeholder="Search students, packs, quizzes..." />
             </div>
-            <button className="logout-button">
+            <button className="logout-button" onClick={logout}>
               <LogOut size={17} />
               Logout
             </button>
@@ -275,11 +275,11 @@ function SettingsPanel() {
       <div className="panel-card wide">
         <div className="panel-header">
           <h3>Deployment Settings</h3>
-          <span className="badge">web-admin</span>
+          <span className="badge">Firebase Auth</span>
         </div>
         <div className="settings-list">
-          <SettingItem title="Firebase / Supabase connection" body="Add environment variables later for real database access." />
-          <SettingItem title="Admin authentication" body="Connect with email login, Google login, or Firebase Auth before production." />
+          <SettingItem title="Firebase web login" body="Email/password and Google login are enabled in the web admin shell." />
+          <SettingItem title="Admin permission" body="Use VITE_ADMIN_EMAILS or Firestore collection admin_users/{uid} with active=true and role=admin/editor/super_admin." />
           <SettingItem title="Vercel root directory" body="Set project root to web-admin for separate URL deployment." />
         </div>
       </div>
@@ -345,4 +345,8 @@ function SettingItem({ title, body }) {
   return <div className="setting-item"><strong>{title}</strong><p>{body}</p></div>;
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+createRoot(document.getElementById('root')).render(
+  <AuthGate>
+    {({ user, logout }) => <App user={user} logout={logout} />}
+  </AuthGate>
+);
