@@ -19,6 +19,9 @@ const subjects = [
   'Critical Thinking',
 ];
 const mediums = ['Arabic', 'English', 'Arabic Support'];
+const difficulties = ['Easy', 'Medium', 'Hard', 'Mixed'];
+const generationStyles = ['Textbook', 'Exam Paper', 'Model Paper', 'Concept Mastery'];
+const bloomLevels = ['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create', 'Mixed'];
 
 export default function AdminUpload({ user }) {
   const inputRef = useRef(null);
@@ -26,7 +29,15 @@ export default function AdminUpload({ user }) {
   const [grade, setGrade] = useState('Grade 7');
   const [subject, setSubject] = useState('Islamic Studies');
   const [medium, setMedium] = useState('Arabic');
+  const [difficulty, setDifficulty] = useState('Mixed');
+  const [generationStyle, setGenerationStyle] = useState('Exam Paper');
+  const [bloomLevel, setBloomLevel] = useState('Mixed');
   const [learningPackTitle, setLearningPackTitle] = useState('');
+  const [mcqCount, setMcqCount] = useState(15);
+  const [fibCount, setFibCount] = useState(10);
+  const [tfCount, setTfCount] = useState(10);
+  const [hoqCount, setHoqCount] = useState(3);
+  const [adminNotes, setAdminNotes] = useState('');
   const [status, setStatus] = useState('idle');
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('');
@@ -59,6 +70,8 @@ export default function AdminUpload({ user }) {
         grade,
         subject,
         medium,
+        difficulty,
+        generationStyle,
         uploadedBy: user?.email || 'unknown',
       },
     });
@@ -81,6 +94,19 @@ export default function AdminUpload({ user }) {
             grade,
             subject,
             medium,
+            difficulty,
+            generationStyle,
+            bloomLevel,
+            questionCounts: {
+              mcq: Number(mcqCount) || 0,
+              fib: Number(fibCount) || 0,
+              trueFalse: Number(tfCount) || 0,
+              hoq: Number(hoqCount) || 0,
+            },
+            adminNotes: adminNotes.trim(),
+            aiGenerationStatus: 'queued_for_review',
+            reviewStatus: 'draft',
+            isGoldenCandidate: false,
             fileName: file.name,
             fileType: file.type || 'unknown',
             fileSize: file.size,
@@ -92,7 +118,7 @@ export default function AdminUpload({ user }) {
             createdAt: serverTimestamp(),
           });
           setStatus('success');
-          setMessage('Upload complete. File saved to Firebase Storage and Firestore.');
+          setMessage('Upload complete. Source saved and queued for AI quiz generation review.');
         } catch (error) {
           setStatus('error');
           setMessage(error.message || 'File uploaded, but Firestore record failed.');
@@ -137,6 +163,20 @@ export default function AdminUpload({ user }) {
         <label className="admin-field"><span>Learning Pack Title</span><input value={learningPackTitle} onChange={(e) => setLearningPackTitle(e.target.value)} placeholder="Example: Faith and Good Character" /></label>
       </div>
 
+      <div className="form-grid upload-form">
+        <label className="admin-field"><span>Difficulty</span><select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>{difficulties.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label className="admin-field"><span>Generation Style</span><select value={generationStyle} onChange={(e) => setGenerationStyle(e.target.value)}>{generationStyles.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label className="admin-field"><span>Bloom Level</span><select value={bloomLevel} onChange={(e) => setBloomLevel(e.target.value)}>{bloomLevels.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label className="admin-field"><span>Admin Notes</span><input value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} placeholder="Optional instruction for AI generation" /></label>
+      </div>
+
+      <div className="form-grid upload-form">
+        <label className="admin-field"><span>MCQ Count</span><input type="number" min="0" max="50" value={mcqCount} onChange={(e) => setMcqCount(e.target.value)} /></label>
+        <label className="admin-field"><span>FIB Count</span><input type="number" min="0" max="50" value={fibCount} onChange={(e) => setFibCount(e.target.value)} /></label>
+        <label className="admin-field"><span>True/False Count</span><input type="number" min="0" max="50" value={tfCount} onChange={(e) => setTfCount(e.target.value)} /></label>
+        <label className="admin-field"><span>HOQ Count</span><input type="number" min="0" max="20" value={hoqCount} onChange={(e) => setHoqCount(e.target.value)} /></label>
+      </div>
+
       {status === 'uploading' && (
         <div className="upload-progress">
           <div><span style={{ width: `${progress}%` }} /></div>
@@ -148,7 +188,7 @@ export default function AdminUpload({ user }) {
 
       <button className="primary-button upload-submit" disabled={!canUpload || status === 'uploading'} onClick={uploadFile}>
         <FileText size={18} />
-        {status === 'uploading' ? 'Uploading...' : 'Upload to Firebase'}
+        {status === 'uploading' ? 'Uploading...' : 'Upload + Queue AI Review'}
       </button>
     </div>
   );
