@@ -1,9 +1,7 @@
 package com.example.ui.screens.student
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,12 +12,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -35,126 +33,50 @@ import com.example.domain.models.NotificationDraft
 fun NotificationsScreen(navController: NavController) {
     val notifications = remember { MockData.sentNotifications }
     val readIds = remember { MockData.readNotificationIds }
-    
     var selectedNotification by remember { mutableStateOf<NotificationDraft?>(null) }
     var showDialog by remember { mutableStateOf(false) }
-
-    // Helper counts
     val unreadCount = notifications.count { it.id !in readIds }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            MediumTopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "مركز التنبيهات",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "لديك $unreadCount تنبيه غير مقروء",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
+            TopAppBar(
+                title = { Text("مركز التنبيهات", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
-                    IconButton(
-                        onClick = { navController.navigateUp() },
-                        modifier = Modifier.testTag("back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "رجوع"
-                        )
+                    IconButton(onClick = { navController.navigateUp() }, modifier = Modifier.testTag("back_button")) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع")
                     }
                 },
                 actions = {
                     if (notifications.isNotEmpty()) {
-                        // Mark all as read
-                        IconButton(
-                            onClick = {
-                                notifications.forEach {
-                                    if (it.id !in readIds) {
-                                        readIds.add(it.id)
-                                    }
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "تحديد الكل كمقروء",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                        IconButton(onClick = { notifications.forEach { if (it.id !in readIds) readIds.add(it.id) } }) {
+                            Icon(imageVector = Icons.Default.Check, contentDescription = "تحديد الكل كمقروء", tint = MaterialTheme.colorScheme.primary)
                         }
-                        // Clear all
-                        IconButton(
-                            onClick = {
-                                notifications.clear()
-                                readIds.clear()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "مسح الكل",
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                        IconButton(onClick = { notifications.clear(); readIds.clear() }) {
+                            Icon(imageVector = Icons.Default.Delete, contentDescription = "مسح الكل", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(paddingValues)
+                .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            NotificationsHeroCard(unreadCount = unreadCount, totalCount = notifications.size)
+
             if (notifications.isEmpty()) {
-                // Empty state list view
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🔔", fontSize = 48.sp)
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = "صندوق التنبيهات فارغ",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "عندما يرسل لك المعلمون أو النظام تنبيهات تعليمية مهمة، ستظهر هنا مباشرة.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
-                    )
-                }
+                NotificationsEmptyState(modifier = Modifier.weight(1f))
             } else {
-                // Content active list RTL
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 18.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(notifications.toList().reversed()) { item ->
@@ -163,9 +85,7 @@ fun NotificationsScreen(navController: NavController) {
                             item = item,
                             isRead = isRead,
                             onClick = {
-                                if (!isRead) {
-                                    readIds.add(item.id)
-                                }
+                                if (!isRead) readIds.add(item.id)
                                 selectedNotification = item
                                 showDialog = true
                             }
@@ -173,206 +93,259 @@ fun NotificationsScreen(navController: NavController) {
                     }
                 }
             }
+        }
 
-            // Notification Detail Dialog
-            if (showDialog && selectedNotification != null) {
-                val item = selectedNotification!!
-                AlertDialog(
-                    onDismissRequest = { showDialog = false },
-                    title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(getNotificationBgColor(item.type).copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    getNotificationLabelIcon(item.type),
-                                    fontSize = 18.sp
-                                )
-                            }
-                            Text(
-                                text = getNotificationTypeArabicName(item.type),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    },
-                    text = {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(
-                                text = item.title,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = item.body,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 22.sp
-                            )
-                            Text(
-                                text = "تاريخ الإرسال: ${item.sentAt}",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            // Conditional primary action based on type for deep links
-                            Button(
-                                onClick = {
-                                    showDialog = false
-                                    when (item.type.lowercase().trim()) {
-                                        "badge unlocked" -> navController.navigate("rewards")
-                                        "daily reminder", "streak reminder" -> navController.navigate("student_main") // Takes home
-                                        "weak topic reminder" -> navController.navigate("analytics")
-                                        "premium reminder" -> navController.navigate("subscription_plans")
-                                        else -> {} // Stay
-                                    }
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = when (item.type.lowercase().trim()) {
-                                        "badge unlocked" -> "عرض الشارات الحاصل عليها"
-                                        "daily reminder", "streak reminder" -> "ابدأ المذاكرة الآن"
-                                        "weak topic reminder" -> "تفقد لوحة التقدم العلمي"
-                                        "premium reminder" -> "استكشف الباقة البريميوم"
-                                        else -> "موافق"
-                                    }
-                                )
-                            }
-                            if (item.type.lowercase().trim() in listOf("badge unlocked", "daily reminder", "streak reminder", "weak topic reminder", "premium reminder")) {
-                                OutlinedButton(
-                                    onClick = { showDialog = false },
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Text("إغلاق")
-                                }
-                            }
-                        }
+        if (showDialog && selectedNotification != null) {
+            val item = selectedNotification!!
+            PremiumNotificationDialog(
+                item = item,
+                onDismiss = { showDialog = false },
+                onPrimaryAction = {
+                    showDialog = false
+                    when (item.type.lowercase().trim()) {
+                        "badge unlocked" -> navController.navigate("rewards")
+                        "daily reminder", "streak reminder" -> navController.navigate("student_main")
+                        "weak topic reminder" -> navController.navigate("analytics")
+                        "premium reminder" -> navController.navigate("subscription_plans")
                     }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotificationsHeroCard(unreadCount: Int, totalCount: Int) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(30.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                    )
                 )
+            )
+            .padding(20.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(110.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = (-30).dp, y = 30.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.22f))
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Notification Center", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                    Text("تنبيهاتك التعليمية", fontSize = 25.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimaryContainer, lineHeight = 32.sp)
+                    Text(
+                        text = "تابع التذكيرات، الشارات، ونقاط التحسين في مكان واحد.",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 20.sp
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(66.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color.White.copy(alpha = 0.48f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🔔", fontSize = 36.sp)
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                NotificationsHeroChip("$unreadCount", "غير مقروء")
+                NotificationsHeroChip("$totalCount", "إجمالي")
+                NotificationsHeroChip("ذكي", "توجيه")
             }
         }
     }
 }
 
 @Composable
-fun NotificationItemCard(
-    item: NotificationDraft,
-    isRead: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
+private fun NotificationsHeroChip(value: String, label: String) {
+    Surface(
+        shape = RoundedCornerShape(15.dp),
+        color = Color.White.copy(alpha = 0.55f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.40f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(value, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+            Text(label, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun NotificationsEmptyState(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(104.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("🔔", fontSize = 50.sp)
+        }
+        Spacer(modifier = Modifier.height(22.dp))
+        Text("صندوق التنبيهات فارغ", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "عندما تصلك تذكيرات تعليمية أو شارات جديدة ستظهر هنا مباشرة.",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            lineHeight = 20.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+fun NotificationItemCard(item: NotificationDraft, isRead: Boolean, onClick: () -> Unit) {
+    val accent = getNotificationBgColor(item.type)
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
             .testTag("notification_item_${item.id}"),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-        ),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            width = if (isRead) 1.dp else 2.dp,
-            color = if (isRead) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-        )
+        color = if (isRead) MaterialTheme.colorScheme.surface else accent.copy(alpha = 0.08f),
+        shape = RoundedCornerShape(22.dp),
+        tonalElevation = if (isRead) 1.dp else 3.dp,
+        border = BorderStroke(1.dp, if (isRead) MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f) else accent.copy(alpha = 0.45f))
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.padding(15.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            // Icon Badge Based on Type
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(getNotificationBgColor(item.type).copy(alpha = 0.15f)),
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(17.dp))
+                    .background(accent.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = getNotificationLabelIcon(item.type),
-                    fontSize = 24.sp
-                )
+                Text(text = getNotificationLabelIcon(item.type), fontSize = 26.sp)
             }
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = getNotificationTypeArabicName(item.type),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = getNotificationBgColor(item.type)
-                    )
-                    Text(
-                        text = item.sentAt,
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(getNotificationTypeArabicName(item.type), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = accent)
+                    Text(item.sentAt, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-
-                Text(
-                    text = item.title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Text(
-                    text = item.body,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    lineHeight = 16.sp
-                )
+                Text(item.title, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, lineHeight = 19.sp)
+                Text(item.body, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold)
             }
 
-            // Unread Dot Indicator
             if (!isRead) {
-                Box(
-                    modifier = Modifier
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
+                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(accent))
             }
         }
     }
 }
 
-// Visual category helpers
+@Composable
+private fun PremiumNotificationDialog(item: NotificationDraft, onDismiss: () -> Unit, onPrimaryAction: () -> Unit) {
+    val accent = getNotificationBgColor(item.type)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(accent.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(getNotificationLabelIcon(item.type), fontSize = 34.sp)
+            }
+        },
+        title = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(getNotificationTypeArabicName(item.type), fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = accent)
+                Text(item.title, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(item.body, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f)) {
+                    Text(
+                        text = "تاريخ الإرسال: ${item.sentAt}",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onPrimaryAction,
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(primaryActionText(item.type), fontWeight = FontWeight.ExtraBold)
+                }
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("إغلاق", fontWeight = FontWeight.ExtraBold)
+                }
+            }
+        }
+    )
+}
+
+private fun primaryActionText(type: String): String {
+    return when (type.lowercase().trim()) {
+        "badge unlocked" -> "عرض الشارات"
+        "daily reminder", "streak reminder" -> "ابدأ المذاكرة الآن"
+        "weak topic reminder" -> "تفقد التقدم"
+        "premium reminder" -> "استكشف Premium"
+        else -> "موافق"
+    }
+}
+
 fun getNotificationBgColor(type: String): Color {
     return when (type.lowercase().trim()) {
-        "daily reminder" -> Color(0xFFE28743) // Warm orange
-        "streak reminder" -> Color(0xFFDC2626) // Hot Streak Red
-        "badge unlocked" -> Color(0xFFCA8A04) // Shiny Yellow Gold
-        "leaderboard movement" -> Color(0xFF8B5CF6) // Royal Violet
-        "weak topic reminder" -> Color(0xFF2563EB) // Royal Blue
-        "premium reminder" -> Color(0xFFD946EF) // Pink Magenta Premium
-        "admin announcement" -> Color(0xFF0D9488) // Corporate Teal
-        else -> Color(0xFF4B5563) // Slate Gray
+        "daily reminder" -> Color(0xFFE28743)
+        "streak reminder" -> Color(0xFFDC2626)
+        "badge unlocked" -> Color(0xFFCA8A04)
+        "leaderboard movement" -> Color(0xFF8B5CF6)
+        "weak topic reminder" -> Color(0xFF2563EB)
+        "premium reminder" -> Color(0xFFD946EF)
+        "admin announcement" -> Color(0xFF0D9488)
+        else -> Color(0xFF4B5563)
     }
 }
 

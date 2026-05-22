@@ -14,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,17 +35,17 @@ fun SubscriptionPlansScreen(navController: NavController) {
 
     val singlePlan = SubscriptionPlan(
         id = "plan_single",
-        name = "الباقة الفردية المميزة ⚡",
+        name = "الباقة الفردية",
         type = SubscriptionPlanType.SINGLE_USER,
         price = "39 ريال",
         period = "/ شهرياً",
         features = listOf(
             "ملف شخصي واحد",
-            "لا محدود: أسئلة وحزم",
-            "تحليلات ذكية ومتقدمة",
-            "تعليم متكيف وتوصيات ذكية",
-            "نمط الاختبارات (Exam Mode)",
-            "أقصى حد: جهازين"
+            "فتح جميع الحزم التعليمية",
+            "اختبارات غير محدودة",
+            "تحليلات ذكية وتوصيات",
+            "نمط الاختبارات Exam Mode",
+            "استخدام حتى جهازين"
         ),
         deviceLimit = 2,
         maxProfiles = 1
@@ -51,31 +53,33 @@ fun SubscriptionPlansScreen(navController: NavController) {
 
     val familyPlan = SubscriptionPlan(
         id = "plan_family",
-        name = "الباقة العائلية الشاملة 👨‍👩‍👧‍👦",
+        name = "الباقة العائلية",
         type = SubscriptionPlanType.FAMILY,
         price = "99 ريال",
         period = "/ شهرياً",
         features = listOf(
-            "حتى 4 ملفات شخصية إضافية",
-            "لوحة تحكم خاصة بأولياء الأمور",
-            "تحليلات منفصلة لكل طفل",
-            "جميع ميزات الباقة المميزة",
-            "أقصى حد: 6 أجهزة",
-            "فاتورة واحدة مشتركة"
+            "حتى 4 ملفات للطلاب",
+            "لوحة ولي الأمر",
+            "تقارير منفصلة لكل طفل",
+            "كل ميزات الباقة الفردية",
+            "استخدام حتى 6 أجهزة",
+            "فاتورة واحدة للعائلة"
         ),
         deviceLimit = 6,
         maxProfiles = 4
     )
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("الاشتراكات المميزة", fontWeight = FontWeight.Bold) },
+                title = { Text("الاشتراكات", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -90,27 +94,15 @@ fun SubscriptionPlansScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 580.dp)
+                    .widthIn(max = 600.dp)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "ارتقِ بمستواك التعليمي 👑",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "اختر الباقة المناسبة للوصول غير المحدود إلى كافة الحزم التعليمية، الاختبارات الذكية، وتقارير أولياء الأمور.",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 20.sp
-                )
-                Spacer(modifier = Modifier.height(28.dp))
+                SubscriptionHeroCard()
+
+                PremiumUnlockStrip()
 
                 PlanCard(plan = singlePlan, onClick = {
                     SubscriptionManager.validateGooglePlayPurchase(
@@ -119,89 +111,166 @@ fun SubscriptionPlansScreen(navController: NavController) {
                         productId = "product_single_user",
                         deviceId = "android_device_id_current"
                     ) { success, message ->
-                        if (success) {
-                            navController.navigate("payment_success/${singlePlan.type.name}")
-                        } else {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar(message)
-                            }
-                        }
+                        if (success) navController.navigate("payment_success/${singlePlan.type.name}")
+                        else coroutineScope.launch { snackbarHostState.showSnackbar(message) }
                     }
                 })
-                
-                Spacer(modifier = Modifier.height(20.dp))
-                
+
                 PlanCard(plan = familyPlan, onClick = {
                     SubscriptionManager.validateAppleReceipt(
                         userId = "user_dummy_789",
                         receiptData = "receipt_data_apple_verify_abc",
                         deviceId = "android_device_id_current"
                     ) { success, message ->
-                        if (success) {
-                            navController.navigate("payment_success/${familyPlan.type.name}")
-                        } else {
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar(message)
-                            }
-                        }
+                        if (success) navController.navigate("payment_success/${familyPlan.type.name}")
+                        else coroutineScope.launch { snackbarHostState.showSnackbar(message) }
                     }
                 }, isHighlighted = true)
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Secure Payment Gateways Badge
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text("🛡️", fontSize = 16.sp)
-                            Text("دفع آمن ومشفر ١٠٠٪ ومتوافق مع المتاجر الرسمية", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Text(
-                            text = "🇸🇦 مدى •  Apple Pay • 💳 Visa • 💳 Mastercard • Google Play",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "الاشتراكات تتجدد تلقائياً شهرياً ويمكن إلغاؤها بكل بساطة في أي وقت من إعدادات المتجر بدون أي غرامات.",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                            textAlign = TextAlign.Center,
-                            lineHeight = 14.sp
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
+
+                SecurePaymentCard()
+
                 TextButton(onClick = {
-                    SubscriptionManager.restorePastPurchases("user_dummy_789") { success, message ->
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(message)
-                        }
+                    SubscriptionManager.restorePastPurchases("user_dummy_789") { _, message ->
+                        coroutineScope.launch { snackbarHostState.showSnackbar(message) }
                     }
                 }) {
-                    Text("استعادة المشتريات السابقة", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("استعادة المشتريات السابقة", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
                 }
-                
-                Spacer(modifier = Modifier.height(6.dp))
+
                 Text(
-                    text = "شروط الاستخدام وسياسة الخصوصية لمنصة التعليم المتوسطة السعودية متوفرة على موقعنا الإلكتروني.",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    textAlign = TextAlign.Center
+                    text = "يمكن إدارة الاشتراك أو إلغاؤه من إعدادات متجر Google Play أو App Store.",
+                    fontSize = 10.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 16.sp
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionHeroCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(30.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                    )
+                )
+            )
+            .padding(20.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = (-36).dp, y = 32.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.22f))
+        )
+
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Premium Learning",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "افتح كل الحزم التعليمية",
+                        fontSize = 25.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        lineHeight = 32.sp
+                    )
+                    Text(
+                        text = "وصول كامل للملخصات، الاختبارات، التحليلات، وخطة التعلّم الذكية.",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 20.sp
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(66.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Color.White.copy(alpha = 0.48f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("👑", fontSize = 36.sp)
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                SubscriptionHeroChip("كل الحزم", "مفتوحة")
+                SubscriptionHeroChip("AI", "توصيات")
+                SubscriptionHeroChip("Family", "عائلة")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionHeroChip(value: String, label: String) {
+    Surface(
+        shape = RoundedCornerShape(15.dp),
+        color = Color.White.copy(alpha = 0.55f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.40f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(value, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+            Text(label, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun PremiumUnlockStrip() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = Color(0xFFFFF7ED),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFED7AA))
+    ) {
+        Row(
+            modifier = Modifier.padding(15.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFFFEDD5)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🔓", fontSize = 25.sp)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("النسخة المجانية محدودة", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF9A3412))
+                Text(
+                    text = "أول حزمة في كل مادة مجانية. باقي الحزم تحتاج Premium.",
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF9A3412),
+                    lineHeight = 18.sp
                 )
             }
         }
@@ -210,91 +279,152 @@ fun SubscriptionPlansScreen(navController: NavController) {
 
 @Composable
 fun PlanCard(plan: SubscriptionPlan, onClick: () -> Unit, isHighlighted: Boolean = false) {
-    val borderColor = if (isHighlighted) Color(0xFFFFD700) else MaterialTheme.colorScheme.outlineVariant
+    val borderColor = if (isHighlighted) Color(0xFFFFD700) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
     val containerColor = if (isHighlighted) Color(0xFFFFFDF0) else MaterialTheme.colorScheme.surface
-    val highlightBorderWidth = if (isHighlighted) 2.5.dp else 1.dp
+    val actionColor = if (isHighlighted) Color(0xFFFFD700) else MaterialTheme.colorScheme.primary
 
-    Card(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .border(highlightBorderWidth, borderColor, RoundedCornerShape(24.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isHighlighted) 4.dp else 1.dp
-        )
+        shape = RoundedCornerShape(28.dp),
+        color = containerColor,
+        tonalElevation = if (isHighlighted) 4.dp else 2.dp,
+        shadowElevation = if (isHighlighted) 4.dp else 2.dp,
+        border = androidx.compose.foundation.BorderStroke(if (isHighlighted) 2.dp else 1.dp, borderColor)
     ) {
-        Column(modifier = Modifier.padding(24.dp)) {
+        Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (isHighlighted) {
+                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFFD700)) {
+                    Text(
+                        text = "الأكثر توفيراً للعائلة 🔥",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(
+                        text = plan.name,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (isHighlighted) Color(0xFFD97706) else MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = if (isHighlighted) "للأهل والأبناء" else "لطالب واحد",
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFFFFD700), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .size(54.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(actionColor.copy(alpha = if (isHighlighted) 0.35f else 0.13f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text("الباقة العائلية الأكثر توفيراً 🔥", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(if (isHighlighted) "👨‍👩‍👧‍👦" else "⚡", fontSize = 25.sp)
                 }
-                Spacer(modifier = Modifier.height(14.dp))
             }
-            
-            Text(
-                text = plan.name, 
-                fontSize = 22.sp, 
-                fontWeight = FontWeight.Bold, 
-                color = if (isHighlighted) Color(0xFFD97706) else MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(plan.price, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text(plan.price, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(plan.period, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 6.dp))
+                Text(plan.period, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 7.dp))
             }
-            
-            Spacer(modifier = Modifier.height(20.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(20.dp))
-            
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.50f))
+
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 plan.features.forEach { feature ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Box(
                             modifier = Modifier
-                                .size(20.dp)
-                                .background(Color(0xFFDCFCE7), CircleShape),
+                                .size(22.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFDCFCE7)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("✓", color = Color(0xFF15803D), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Text("✓", color = Color(0xFF15803D), fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
                         }
-                        Text(feature, fontSize = 13.5.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            text = feature,
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 19.sp
+                        )
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(26.dp))
-            
+
             Button(
                 onClick = onClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
+                    .height(54.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isHighlighted) Color(0xFFFFD700) else MaterialTheme.colorScheme.primary,
+                    containerColor = actionColor,
                     contentColor = if (isHighlighted) Color.Black else MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(if (isHighlighted) "تفعيل باقة العائلة الأفضل 👨‍👩‍👧‍👦" else "تفعيل الباقة المميزة ⚡", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                }
+                Text(
+                    text = if (isHighlighted) "تفعيل باقة العائلة" else "تفعيل الباقة الفردية",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 14.sp
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun SecurePaymentCard() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+    ) {
+        Column(
+            modifier = Modifier.padding(15.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("🛡️", fontSize = 17.sp)
+                Text(
+                    text = "دفع آمن عبر المتاجر الرسمية",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Text(
+                text = "Apple Pay • Google Play • Visa • Mastercard",
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "يمكن إلغاء الاشتراك في أي وقت من إعدادات المتجر.",
+                fontSize = 10.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                lineHeight = 15.sp
+            )
         }
     }
 }

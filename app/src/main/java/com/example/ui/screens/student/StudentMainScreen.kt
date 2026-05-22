@@ -1,10 +1,8 @@
 package com.example.ui.screens.student
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,7 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.StudentHomeScreen
 import com.example.ui.theme.BottomNavActiveBg
 import com.example.ui.theme.SurfaceContainerLowLight
 
@@ -36,7 +33,7 @@ fun StudentMainScreen(rootNavController: NavController) {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                "home" -> StudentHomeScreen(rootNavController)
+                "home" -> PremiumStudentHomeScreen(rootNavController)
                 "subjects" -> SubjectsScreen(rootNavController)
                 "practice" -> com.example.ui.screens.student.analytics.AnalyticsScreen(rootNavController)
                 "leaderboard" -> com.example.ui.screens.student.leaderboard.LeaderboardScreen(rootNavController)
@@ -55,40 +52,33 @@ fun PlaceholderScreen(title: String) {
 
 @Composable
 fun StudentBottomNavigation(selectedTab: String, onTabSelected: (String) -> Unit) {
-    Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .background(SurfaceContainerLowLight)
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-            .padding(horizontal = 8.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+            .navigationBarsPadding()
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        shape = RoundedCornerShape(28.dp),
+        color = SurfaceContainerLowLight,
+        tonalElevation = 8.dp,
+        shadowElevation = 8.dp,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+        )
     ) {
-        BottomNavItem(
-            icon = "🏠", label = "الرئيسية", 
-            isActive = selectedTab == "home",
-            onClick = { onTabSelected("home") }
-        )
-        BottomNavItem(
-            icon = "📚", label = "المواد", 
-            isActive = selectedTab == "subjects",
-            onClick = { onTabSelected("subjects") }
-        )
-        BottomNavItem(
-            icon = "📝", label = "التدريب", 
-            isActive = selectedTab == "practice",
-            onClick = { onTabSelected("practice") }
-        )
-        BottomNavItem(
-            icon = "🏆", label = "المتصدرون", 
-            isActive = selectedTab == "leaderboard",
-            onClick = { onTabSelected("leaderboard") }
-        )
-        BottomNavItem(
-            icon = "👤", label = "حسابي", 
-            isActive = selectedTab == "profile",
-            onClick = { onTabSelected("profile") }
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 9.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BottomNavItem("🏠", "الرئيسية", selectedTab == "home") { onTabSelected("home") }
+            BottomNavItem("📚", "المواد", selectedTab == "subjects") { onTabSelected("subjects") }
+            BottomNavItem("📝", "تدريب", selectedTab == "practice") { onTabSelected("practice") }
+            BottomNavItem("🏆", "ترتيب", selectedTab == "leaderboard") { onTabSelected("leaderboard") }
+            BottomNavItem("👤", "حسابي", selectedTab == "profile") { onTabSelected("profile") }
+        }
     }
 }
 
@@ -97,22 +87,25 @@ fun BottomNavItem(icon: String, label: String, isActive: Boolean, onClick: () ->
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.clickable(onClick = onClick)
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 3.dp, vertical = 2.dp)
     ) {
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(50))
+                .clip(RoundedCornerShape(18.dp))
                 .background(if (isActive) BottomNavActiveBg else Color.Transparent)
-                .padding(horizontal = 20.dp, vertical = 4.dp),
+                .padding(horizontal = if (isActive) 17.dp else 12.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = icon, fontSize = 20.sp)
+            Text(text = icon, fontSize = if (isActive) 21.sp else 19.sp)
         }
         Text(
             text = label,
-            fontSize = 12.sp,
-            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-            color = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            fontSize = 11.sp,
+            fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.SemiBold,
+            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
         )
     }
 }

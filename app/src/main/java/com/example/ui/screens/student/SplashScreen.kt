@@ -25,23 +25,21 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(
     onNavigateToStudentLogin: () -> Unit,
-    onNavigateToAdminLogin: () -> Unit // preserved for compliance with configuration
+    onNavigateToAdminLogin: () -> Unit
 ) {
-    // Elegant pulsing animation for the logo
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val infiniteTransition = rememberInfiniteTransition(label = "premium-pulse")
     val scale by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
+        initialValue = 0.94f,
+        targetValue = 1.06f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
+            animation = tween(1300, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "scale"
+        label = "logo-scale"
     )
 
-    // Trigger auto-navigation to login screen directly
     LaunchedEffect(Unit) {
-        delay(1500) // Beautiful 1.5 seconds cinematic wait
+        delay(1600)
         onNavigateToStudentLogin()
     }
 
@@ -49,70 +47,109 @@ fun SplashScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
+                Brush.verticalGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.22f),
                         MaterialTheme.colorScheme.background
                     )
                 )
-            ),
+            )
+            .windowInsetsPadding(WindowInsets.safeDrawing),
         contentAlignment = Alignment.Center
     ) {
+        Box(
+            modifier = Modifier
+                .size(260.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = 90.dp, y = (-70).dp)
+                .background(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                    CircleShape
+                )
+        )
+        Box(
+            modifier = Modifier
+                .size(220.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = (-80).dp, y = 70.dp)
+                .background(
+                    Color(0xFFFFD166).copy(alpha = 0.10f),
+                    CircleShape
+                )
+        )
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(24.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 28.dp)
         ) {
-            // Pulsing Logo Emblem
             Box(
                 modifier = Modifier
                     .scale(scale)
-                    .size(110.dp)
+                    .size(124.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(32.dp)
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                Color(0xFFFFD166).copy(alpha = 0.22f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(36.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "🎓", fontSize = 52.sp)
+                Text(text = "🎓", fontSize = 58.sp)
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
             Text(
                 text = "منصة التعليم الذكية",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 31.sp,
+                fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                lineHeight = 38.sp
             )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Text(
-                text = "للمرحلة المتوسطة بالمملكة العربية السعودية 🇸🇦",
-                fontSize = 14.sp,
+                text = "تعلم يومياً • اختبر نفسك • اجمع النقاط",
+                fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Premium linear loader
+            Text(
+                text = "للمرحلة المتوسطة بالمملكة العربية السعودية 🇸🇦",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f),
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp
+            )
+
+            Spacer(modifier = Modifier.height(46.dp))
+
             CircularProgressIndicator(
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(34.dp),
                 color = MaterialTheme.colorScheme.primary,
                 strokeWidth = 3.dp
             )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             Text(
-                text = "جاري تفعيل الاتصال الآمن...",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                fontWeight = FontWeight.Medium
+                text = "جاري تجهيز رحلتك التعليمية...",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
