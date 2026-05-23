@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    match /students/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /learning_packs/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /summaries/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /questions/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /admin_uploads/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /generation_jobs/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /student_progress/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /quiz_attempts/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
