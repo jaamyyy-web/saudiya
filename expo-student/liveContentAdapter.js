@@ -1,4 +1,6 @@
-export function normalizeLivePack(pack, fallbackIndex = 0) {
+export function normalizeLivePack(pack, fallbackIndex = 0, isPremium = false) {
+  const requiresPremium = pack.locked === true || pack.isPremium === true || pack.premiumOnly === true;
+
   return {
     id: pack.id,
     title: pack.title || pack.name || 'Learning Pack',
@@ -6,16 +8,24 @@ export function normalizeLivePack(pack, fallbackIndex = 0) {
     subject: pack.subject || 'General',
     subjectId: pack.subjectId || pack.subjectKey || String(pack.subject || 'general').toLowerCase(),
     progress: pack.progress || 0,
-    locked: pack.locked === true || pack.isPremium === true,
+    locked: requiresPremium && !isPremium,
+    premiumOnly: requiresPremium,
     xp: pack.xp || 120,
     order: pack.order || fallbackIndex + 1,
     source: 'firestore',
   };
 }
 
-export function mergeLivePacksWithDemo(livePacks, demoPacks) {
-  if (!Array.isArray(livePacks) || livePacks.length === 0) return demoPacks;
-  return livePacks.map((pack, index) => normalizeLivePack(pack, index));
+export function mergeLivePacksWithDemo(livePacks, demoPacks, isPremium = false) {
+  if (!Array.isArray(livePacks) || livePacks.length === 0) {
+    return demoPacks.map((pack) => ({
+      ...pack,
+      locked: pack.locked && !isPremium,
+      premiumOnly: Boolean(pack.locked),
+    }));
+  }
+
+  return livePacks.map((pack, index) => normalizeLivePack(pack, index, isPremium));
 }
 
 export function getDisplayStudent(student, demoStudent) {
