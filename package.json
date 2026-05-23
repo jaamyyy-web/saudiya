@@ -1,0 +1,16 @@
+{
+  "name": "saudiedu-sad",
+  "private": true,
+  "scripts": {
+    "admin:install": "cd web-admin && npm install",
+    "admin:dev": "cd web-admin && npm run dev",
+    "admin:build": "cd web-admin && npm install && npm run build",
+    "student:install": "cd expo-student && npm install",
+    "student:start": "cd expo-student && npx expo start --tunnel --clear",
+    "functions:install": "cd functions && npm install",
+    "deploy:rules": "firebase deploy --only firestore,storage",
+    "deploy:functions": "firebase deploy --only functions",
+    "deploy:hosting": "cd web-admin && npm install && npm run build && cd .. && firebase deploy --only hosting",
+    "deploy:all": "cd web-admin && npm install && npm run build && cd ../functions && npm install && cd .. && firebase deploy --only firestore,storage,functions,hosting"
+  }
+}
