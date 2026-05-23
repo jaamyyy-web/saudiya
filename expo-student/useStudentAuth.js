@@ -1,18 +1,45 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signInWithCredential } from 'firebase/auth';
 import { auth } from './firebase';
+import { GOOGLE_AUTH_CONFIG, hasGoogleOAuthConfigured } from './googleAuthConfig';
 
-async function signInWithProviderPlaceholder(providerName) {
-  // Real Google/Apple native provider setup needs Expo OAuth client IDs and store configuration.
-  // Until those keys are added, keep the app usable by preserving anonymous Firebase identity.
-  console.warn(`${providerName} sign-in is not configured yet. Using anonymous Firebase identity.`);
+WebBrowser.maybeCompleteAuthSession();
+
+async function ensureGuestUser() {
   if (auth.currentUser) return auth.currentUser;
   const result = await signInAnonymously(auth);
   return result.user;
 }
 
+async function signInWithProviderPlaceholder(providerName) {
+  console.warn(`${providerName} sign-in is not configured yet. Using anonymous Firebase identity.`);
+  return ensureGuestUser();
+}
+
+export function useGoogleSignInRequest() {
+  return Google.useAuthRequest({
+    expoClientId: GOOGLE_AUTH_CONFIG.expoClientId || undefined,
+    iosClientId: GOOGLE_AUTH_CONFIG.iosClientId || undefined,
+    androidClientId: GOOGLE_AUTH_CONFIG.androidClientId || undefined,
+    webClientId: GOOGLE_AUTH_CONFIG.webClientId || undefined,
+  });
+}
+
+export async function completeGoogleSignIn(authentication) {
+  if (!authentication?.idToken && !authentication?.accessToken) {
+    return ensureGuestUser();
+  }
+
+  const credential = GoogleAuthProvider.credential(authentication.idToken || null, authentication.accessToken || null);
+  const result = await signInWithCredential(auth, credential);
+  return result.user;
+}
+
 export async function signInWithGoogle() {
-  return signInWithProviderPlaceholder('Google');
+  if (!hasGoogleOAuthConfigured()) return signInWithProviderPlaceholder('Google');
+  return ensureGuestUser();
 }
 
 export async function signInWithApple() {
@@ -20,9 +47,7 @@ export async function signInWithApple() {
 }
 
 export async function signInAsGuest() {
-  if (auth.currentUser) return auth.currentUser;
-  const result = await signInAnonymously(auth);
-  return result.user;
+  return ensureGuestUser();
 }
 
 export function useStudentAuth() {
