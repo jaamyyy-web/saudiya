@@ -52,6 +52,15 @@ export default function AdminUpload({ user }) {
     if (inputRef.current) inputRef.current.value = '';
   }
 
+  function questionCountsPayload() {
+    return {
+      mcq: Number(mcqCount) || 0,
+      fib: Number(fibCount) || 0,
+      trueFalse: Number(tfCount) || 0,
+      hoq: Number(hoqCount) || 0,
+    };
+  }
+
   async function uploadFile() {
     if (!canUpload) {
       setMessage('Please choose a file and enter a learning pack title.');
@@ -89,7 +98,7 @@ export default function AdminUpload({ user }) {
       async () => {
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          await addDoc(collection(db, 'admin_uploads'), {
+          const uploadData = {
             title: learningPackTitle.trim(),
             grade,
             subject,
@@ -97,24 +106,23 @@ export default function AdminUpload({ user }) {
             difficulty,
             generationStyle,
             bloomLevel,
-            questionCounts: {
-              mcq: Number(mcqCount) || 0,
-              fib: Number(fibCount) || 0,
-              trueFalse: Number(tfCount) || 0,
-              hoq: Number(hoqCount) || 0,
-            },
+            questionCounts: questionCountsPayload(),
             adminNotes: adminNotes.trim(),
-            aiGenerationStatus: 'queued_for_review',
-            reviewStatus: 'draft',
-            isGoldenCandidate: false,
             fileName: file.name,
             fileType: file.type || 'unknown',
             fileSize: file.size,
             storagePath: filePath,
             downloadURL,
-            status: 'uploaded',
             uploadedBy: user?.email || null,
             uploadedByUid: user?.uid || null,
+          };
+
+          await addDoc(collection(db, 'admin_uploads'), {
+            ...uploadData,
+            aiGenerationStatus: 'queued_for_review',
+            reviewStatus: 'draft',
+            isGoldenCandidate: false,
+            status: 'uploaded',
             createdAt: serverTimestamp(),
           });
           setStatus('success');
