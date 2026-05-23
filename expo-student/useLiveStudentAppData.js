@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStudentAuth } from './useStudentAuth';
+import { subscribeStudentSubscription } from './subscriptionService';
 import {
   subscribeLeaderboard,
   subscribePublishedLearningPacks,
@@ -11,6 +12,7 @@ export function useLiveStudentAppData(studentIdOverride = null) {
   const { studentId: authStudentId, loading: authLoading } = useStudentAuth();
   const studentId = studentIdOverride || authStudentId || 'demo-student';
   const [student, setStudent] = useState(null);
+  const [subscription, setSubscription] = useState(null);
   const [livePacks, setLivePacks] = useState([]);
   const [progress, setProgress] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -28,6 +30,10 @@ export function useLiveStudentAppData(studentIdOverride = null) {
       setLoading(false);
     }, recordError);
 
+    const unsubSubscription = subscribeStudentSubscription(studentId, (data) => {
+      setSubscription(data);
+    }, recordError);
+
     const unsubPacks = subscribePublishedLearningPacks({}, (data) => {
       setLivePacks(data);
       setLoading(false);
@@ -43,11 +49,14 @@ export function useLiveStudentAppData(studentIdOverride = null) {
 
     return () => {
       unsubProfile && unsubProfile();
+      unsubSubscription && unsubSubscription();
       unsubPacks && unsubPacks();
       unsubProgress && unsubProgress();
       unsubLeaderboard && unsubLeaderboard();
     };
   }, [studentId, studentIdOverride, authLoading]);
+
+  const isPremium = Boolean(subscription?.active || subscription?.premiumUnlocked);
 
   const completedPackIds = useMemo(() => {
     return new Set(progress.filter((item) => item.status === 'completed').map((item) => item.packId));
@@ -70,6 +79,8 @@ export function useLiveStudentAppData(studentIdOverride = null) {
   return {
     student,
     studentId,
+    subscription,
+    isPremium,
     livePacks,
     progress,
     leaderboard,
