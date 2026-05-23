@@ -9,12 +9,18 @@ WebBrowser.maybeCompleteAuthSession();
 
 async function ensureGuestUser() {
   if (auth.currentUser) return auth.currentUser;
-  const result = await signInAnonymously(auth);
-  return result.user;
+
+  try {
+    const result = await signInAnonymously(auth);
+    return result.user;
+  } catch (error) {
+    // Anonymous auth may be disabled during MVP testing.
+    // Keep the app usable with local demo student fallback.
+    return null;
+  }
 }
 
-async function signInWithProviderPlaceholder(providerName) {
-  console.warn(`${providerName} sign-in is not configured yet. Using anonymous Firebase identity.`);
+async function signInWithProviderPlaceholder() {
   return ensureGuestUser();
 }
 
@@ -38,12 +44,12 @@ export async function completeGoogleSignIn(authentication) {
 }
 
 export async function signInWithGoogle() {
-  if (!hasGoogleOAuthConfigured()) return signInWithProviderPlaceholder('Google');
+  if (!hasGoogleOAuthConfigured()) return signInWithProviderPlaceholder();
   return ensureGuestUser();
 }
 
 export async function signInWithApple() {
-  return signInWithProviderPlaceholder('Apple');
+  return signInWithProviderPlaceholder();
 }
 
 export async function signInAsGuest() {
@@ -62,14 +68,9 @@ export function useStudentAuth() {
         return;
       }
 
-      try {
-        const result = await signInAnonymously(auth);
-        setUser(result.user);
-      } catch (error) {
-        console.error('Anonymous auth failed', error);
-      } finally {
-        setLoading(false);
-      }
+      const guestUser = await ensureGuestUser();
+      setUser(guestUser);
+      setLoading(false);
     });
 
     return () => unsubscribe();
