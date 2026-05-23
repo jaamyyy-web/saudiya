@@ -24,7 +24,7 @@ export function useLiveStudentAppData(studentIdOverride = null) {
     const recordError = (error) => setErrors((current) => [...current, error.message]);
 
     const unsubProfile = subscribeStudentProfile(studentId, (data) => {
-      setStudent({ id: studentId, ...data });
+      setStudent({ ...data, id: studentId });
       setLoading(false);
     }, recordError);
 
