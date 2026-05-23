@@ -6,6 +6,7 @@ import { I18nManager, ScrollView, StyleSheet, Text, TouchableOpacity, View } fro
 import { useLiveStudentAppData } from './useLiveStudentAppData';
 import { demoQuestions, demoSummary, loadPackQuestions, loadPackSummary } from './studentData';
 import { savePackCompletion, saveQuizAttempt } from './progressService';
+import LearningPackFlowV2 from './LearningPackFlowV2';
 import {
   getDisplayAnalytics,
   getDisplayLeaderboard,
@@ -110,7 +111,7 @@ function Home({ packs, analytics, openPacks, openTab }) {
 function SubjectGrid({ onPress }) { return <View style={styles.grid}>{subjects.map(s => <TouchableOpacity key={s.id} style={styles.subject} onPress={() => onPress(s.id)}><Ionicons name={s.icon} size={18} color="#047857" /><Text style={styles.subjectText}>{s.ar}</Text></TouchableOpacity>)}</View>; }
 function Packs({ packs, student, selectedSubject, setSelectedSubject, selectedPack, setSelectedPack }) {
   const filtered = useMemo(() => selectedSubject ? packs.filter(p => p.subjectId === selectedSubject) : packs, [packs, selectedSubject]);
-  if (selectedPack) return <LearningPackFlow pack={selectedPack} student={student} goBack={() => setSelectedPack(null)} />;
+  if (selectedPack) return <LearningPackFlowV2 pack={selectedPack} student={student} goBack={() => setSelectedPack(null)} flowSteps={flowSteps} styles={styles} Button={Button} Back={Back} SummaryStep={SummaryStep} QuestionStep={QuestionStep} Completion={Completion} Locked={Locked} />;
   return <View><SectionTitle title="حزم التعلم" /><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>{[{ id: null, ar: 'الكل' }, ...subjects].map(item => <TouchableOpacity key={item.id || 'all'} style={[styles.filter, selectedSubject === item.id && styles.filterActive]} onPress={() => setSelectedSubject(item.id)}><Text style={[styles.filterText, selectedSubject === item.id && styles.filterTextActive]}>{item.ar}</Text></TouchableOpacity>)}</ScrollView>{filtered.map(pack => <PackCard key={pack.id} pack={pack} onPress={() => setSelectedPack(pack)} />)}</View>;
 }
 function PackCard({ pack, onPress }) { return <TouchableOpacity style={styles.pack} onPress={onPress}><View style={styles.packTop}><View style={styles.packIcon}><Ionicons name={pack.locked ? 'lock-closed' : 'book'} size={20} color="#047857" /></View><View style={{ flex: 1 }}><Text style={styles.packTitle}>{pack.title}</Text><Text style={styles.packMeta}>{pack.grade} • {pack.subject} {pack.source === 'firestore' ? '• مباشر' : ''}</Text></View></View><View style={styles.bar}><View style={[styles.fill, { width: `${pack.progress || 0}%` }]} /></View><Text style={styles.progress}>{pack.locked ? 'مغلق - يحتاج Premium' : `اكتمل ${pack.progress || 0}%`}</Text></TouchableOpacity>; }
