@@ -58,6 +58,16 @@ export function useLiveStudentAppData(studentIdOverride = null) {
 
   const isPremium = Boolean(subscription?.active || subscription?.premiumUnlocked);
 
+  const displayLivePacks = useMemo(() => {
+    if (!isPremium) return livePacks;
+    return livePacks.map((pack) => ({
+      ...pack,
+      premiumOnly: Boolean(pack.locked || pack.isPremium || pack.premiumOnly),
+      locked: false,
+      isPremium: false,
+    }));
+  }, [livePacks, isPremium]);
+
   const completedPackIds = useMemo(() => {
     return new Set(progress.filter((item) => item.status === 'completed').map((item) => item.packId));
   }, [progress]);
@@ -81,7 +91,7 @@ export function useLiveStudentAppData(studentIdOverride = null) {
     studentId,
     subscription,
     isPremium,
-    livePacks,
+    livePacks: displayLivePacks,
     progress,
     leaderboard,
     completedPackIds,
