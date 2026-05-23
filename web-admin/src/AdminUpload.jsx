@@ -133,7 +133,7 @@ export default function AdminUpload({ user }) {
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg"
+          accept=".pdf,.txt,.csv,.doc,.docx,.png,.jpg,.jpeg"
           hidden
           onChange={(event) => {
             const selected = event.target.files?.[0];
@@ -146,7 +146,7 @@ export default function AdminUpload({ user }) {
           }}
         />
         <UploadCloud size={34} />
-        <strong>{file ? file.name : 'Upload PDF, text, image, or document'}</strong>
+        <strong>{file ? file.name : 'Upload PDF, text, CSV, image, or document'}</strong>
         <p>{file ? `${Math.round(file.size / 1024)} KB` : 'Click here to choose a textbook, lesson note, or worksheet file.'}</p>
       </div>
 
