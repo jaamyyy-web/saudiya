@@ -1,5 +1,6 @@
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { updateStudentStats } from './studentStatsService';
 
 export async function saveQuizAttempt(data) {
   try {
@@ -34,6 +35,8 @@ export async function savePackCompletion(data) {
       totalQuestions: data.totalQuestions || 0,
       completedAt: serverTimestamp(),
     });
+
+    await updateStudentStats(data);
   } catch (error) {
     console.warn('Could not save pack completion:', error.message);
   }
