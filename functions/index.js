@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { extractTextFromStorage, getStoragePath } = require('./sourceExtractor');
 
 admin.initializeApp();
 
@@ -68,38 +69,10 @@ function fallbackGeneratedContent(job) {
       points: ['افهم المفهوم قبل الحفظ.', 'راجع الأمثلة القصيرة.', 'أجب عن الأسئلة بدون استعجال.'],
     },
     questions: [
-      {
-        type: 'MCQ',
-        question: 'ما الهدف من هذا الدرس؟',
-        options: ['الفهم والتطبيق', 'الحفظ فقط', 'عدم الدراسة', 'تجاهل التدريب'],
-        answerIndex: 0,
-        explanation: 'الهدف هو فهم الفكرة ثم تطبيقها في أسئلة جديدة.',
-        difficulty: 'easy',
-      },
-      {
-        type: 'FIB',
-        question: 'الفهم الصحيح يعني معرفة المعنى ثم ____ في سؤال جديد.',
-        options: ['تطبيقه', 'نسيانه', 'تركه', 'حذفه'],
-        answerIndex: 0,
-        explanation: 'التطبيق يساعد الطالب على تثبيت الفكرة.',
-        difficulty: 'easy',
-      },
-      {
-        type: 'TF',
-        question: 'المراجعة اليومية تساعد على تثبيت المعلومة.',
-        options: ['صح', 'خطأ'],
-        answerIndex: 0,
-        explanation: 'المراجعة القصيرة اليومية تساعد على التذكر والفهم.',
-        difficulty: 'easy',
-      },
-      {
-        type: 'HOQ',
-        question: 'كيف يمكن استخدام هذا الدرس في حياتك اليومية؟',
-        options: ['أطبقه في موقف عملي', 'أحفظه فقط', 'أتجاهله', 'أترك التدريب'],
-        answerIndex: 0,
-        explanation: 'أسئلة التفكير تساعدك على ربط الدرس بالحياة اليومية.',
-        difficulty: 'medium',
-      },
+      { type: 'MCQ', question: 'ما الهدف من هذا الدرس؟', options: ['الفهم والتطبيق', 'الحفظ فقط', 'عدم الدراسة', 'تجاهل التدريب'], answerIndex: 0, explanation: 'الهدف هو فهم الفكرة ثم تطبيقها في أسئلة جديدة.', difficulty: 'easy' },
+      { type: 'FIB', question: 'الفهم الصحيح يعني معرفة المعنى ثم ____ في سؤال جديد.', options: ['تطبيقه', 'نسيانه', 'تركه', 'حذفه'], answerIndex: 0, explanation: 'التطبيق يساعد الطالب على تثبيت الفكرة.', difficulty: 'easy' },
+      { type: 'TF', question: 'المراجعة اليومية تساعد على تثبيت المعلومة.', options: ['صح', 'خطأ'], answerIndex: 0, explanation: 'المراجعة القصيرة اليومية تساعد على التذكر والفهم.', difficulty: 'easy' },
+      { type: 'HOQ', question: 'كيف يمكن استخدام هذا الدرس في حياتك اليومية؟', options: ['أطبقه في موقف عملي', 'أحفظه فقط', 'أتجاهله', 'أترك التدريب'], answerIndex: 0, explanation: 'أسئلة التفكير تساعدك على ربط الدرس بالحياة اليومية.', difficulty: 'medium' },
     ],
   };
 }
@@ -117,12 +90,16 @@ function sanitizeGeneratedContent(content, job) {
     },
     questions: questions.slice(0, 40).map((q, index) => {
       const type = ['MCQ', 'FIB', 'TF', 'HOQ'].includes(q.type) ? q.type : 'MCQ';
-      const options = Array.isArray(q.options) && q.options.length ? q.options : fallback.questions[0].options;
+      const fallbackQuestion = fallback.questions.find((item) => item.type === type) || fallback.questions[0];
+      const rawOptions = Array.isArray(q.options) && q.options.length ? q.options : fallbackQuestion.options;
+      const options = type === 'TF' ? ['صح', 'خطأ'] : rawOptions.slice(0, 4);
+      const answerIndex = Number.isInteger(q.answerIndex) && q.answerIndex >= 0 && q.answerIndex < options.length ? q.answerIndex : 0;
+
       return {
         type,
         question: q.question || `سؤال ${index + 1}`,
-        options: type === 'TF' ? ['صح', 'خطأ'] : options.slice(0, 4),
-        answerIndex: Number.isInteger(q.answerIndex) ? q.answerIndex : 0,
+        options,
+        answerIndex,
         explanation: q.explanation || 'شرح مبسط للإجابة الصحيحة.',
         difficulty: q.difficulty || job.difficulty || 'easy',
       };
@@ -144,13 +121,25 @@ async function generateWithGemini(job) {
 exports.processGenerationJob = functions.firestore
   .document('generation_jobs/{jobId}')
   .onCreate(async (snap, context) => {
-    const job = snap.data();
+    const originalJob = snap.data();
     const jobId = context.params.jobId;
 
     try {
       await db.collection('generation_jobs').doc(jobId).update({
         status: 'processing',
         startedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      const extractedText = await extractTextFromStorage(originalJob);
+      const job = {
+        ...originalJob,
+        extractedText: extractedText || originalJob.extractedText || originalJob.sourceText || '',
+      };
+
+      await db.collection('generation_jobs').doc(jobId).update({
+        extractedTextLength: job.extractedText.length,
+        extractedTextPreview: job.extractedText.slice(0, 500),
+        storagePathUsed: getStoragePath(originalJob),
       });
 
       const generated = sanitizeGeneratedContent(await generateWithGemini(job), job);
@@ -163,9 +152,19 @@ exports.processGenerationJob = functions.firestore
         difficulty: job.difficulty || 'easy',
         status: 'draft',
         sourceFile: job.fileName || null,
+        sourceStoragePath: getStoragePath(job),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         generatedFromJob: jobId,
         order: job.order || 999,
+        questionCounts: {
+          mcq: generated.questions.filter((q) => q.type === 'MCQ').length,
+          fib: generated.questions.filter((q) => q.type === 'FIB').length,
+          trueFalse: generated.questions.filter((q) => q.type === 'TF').length,
+          hoq: generated.questions.filter((q) => q.type === 'HOQ').length,
+        },
+        quizStatus: 'draft',
+        summaryStatus: 'draft',
       });
 
       await db.collection('summaries').add({
@@ -173,6 +172,7 @@ exports.processGenerationJob = functions.firestore
         status: 'draft',
         ...generated.summary,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
       for (const [index, question] of generated.questions.entries()) {
@@ -182,6 +182,7 @@ exports.processGenerationJob = functions.firestore
           order: index + 1,
           ...question,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
       }
 
