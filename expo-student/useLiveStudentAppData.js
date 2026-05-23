@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useStudentAuth } from './useStudentAuth';
 import {
   subscribeLeaderboard,
   subscribePublishedLearningPacks,
@@ -6,7 +7,9 @@ import {
   subscribeStudentProgress,
 } from './liveStudentData';
 
-export function useLiveStudentAppData(studentId = 'demo-student') {
+export function useLiveStudentAppData(studentIdOverride = null) {
+  const { studentId: authStudentId, loading: authLoading } = useStudentAuth();
+  const studentId = studentIdOverride || authStudentId || 'demo-student';
   const [student, setStudent] = useState(null);
   const [livePacks, setLivePacks] = useState([]);
   const [progress, setProgress] = useState([]);
@@ -15,11 +18,13 @@ export function useLiveStudentAppData(studentId = 'demo-student') {
   const [errors, setErrors] = useState([]);
 
   useEffect(() => {
+    if (authLoading && !studentIdOverride) return undefined;
+
     setLoading(true);
     const recordError = (error) => setErrors((current) => [...current, error.message]);
 
     const unsubProfile = subscribeStudentProfile(studentId, (data) => {
-      setStudent(data);
+      setStudent({ id: studentId, ...data });
       setLoading(false);
     }, recordError);
 
@@ -42,7 +47,7 @@ export function useLiveStudentAppData(studentId = 'demo-student') {
       unsubProgress && unsubProgress();
       unsubLeaderboard && unsubLeaderboard();
     };
-  }, [studentId]);
+  }, [studentId, studentIdOverride, authLoading]);
 
   const completedPackIds = useMemo(() => {
     return new Set(progress.filter((item) => item.status === 'completed').map((item) => item.packId));
@@ -64,12 +69,13 @@ export function useLiveStudentAppData(studentId = 'demo-student') {
 
   return {
     student,
+    studentId,
     livePacks,
     progress,
     leaderboard,
     completedPackIds,
     analytics,
-    loading,
+    loading: loading || (authLoading && !studentIdOverride),
     errors,
   };
 }
