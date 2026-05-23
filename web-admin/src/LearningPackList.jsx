@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { collection, limit, onSnapshot, orderBy, query, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { BookOpen, Eye, EyeOff, FileText, RefreshCw } from 'lucide-react';
 import { db } from './firebase';
+import { hidePackLive, publishPackLive } from './publishPack';
 
 function formatDate(value) {
   if (!value?.toDate) return 'Just now';
@@ -44,13 +45,25 @@ export default function LearningPackList() {
     return () => unsubscribe();
   }, []);
 
-  async function setPackStatus(packId, status) {
+  async function publishPack(packId) {
     setBusyId(packId);
+    setError('');
     try {
-      await updateDoc(doc(db, 'learning_packs', packId), {
-        status,
-        updatedAt: serverTimestamp(),
-      });
+      await publishPackLive(packId);
+    } catch (err) {
+      setError(err.message || 'Could not publish learning pack.');
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function hidePack(packId) {
+    setBusyId(packId);
+    setError('');
+    try {
+      await hidePackLive(packId);
+    } catch (err) {
+      setError(err.message || 'Could not hide learning pack.');
     } finally {
       setBusyId('');
     }
@@ -93,11 +106,11 @@ export default function LearningPackList() {
                   <FileText size={15} /> Source
                 </a>
               )}
-              <button className="small-button" disabled={isBusy} onClick={() => setPackStatus(pack.id, 'published')}>
-                <Eye size={15} /> Show
+              <button className="small-button" disabled={isBusy} onClick={() => publishPack(pack.id)}>
+                <Eye size={15} /> {isBusy ? 'Publishing...' : 'Show'}
               </button>
-              <button className="small-danger-button" disabled={isBusy} onClick={() => setPackStatus(pack.id, 'hidden')}>
-                <EyeOff size={15} /> Hide
+              <button className="small-danger-button" disabled={isBusy} onClick={() => hidePack(pack.id)}>
+                <EyeOff size={15} /> {isBusy ? 'Updating...' : 'Hide'}
               </button>
             </div>
           </div>
