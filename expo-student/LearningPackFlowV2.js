@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { demoQuestions, demoSummary, loadPackQuestions, loadPackSummary } from './studentData';
 import { savePackCompletion, saveQuizAttempt } from './progressService';
 import SectionProgressDots from './SectionProgressDots';
+import PaywallScreen from './PaywallScreen';
 import { getNextSectionId, getSectionIndex, markSectionComplete } from './learningFlowService';
 
 function normalizeQuestion(raw, index = 0) {
@@ -14,7 +15,7 @@ function normalizeQuestion(raw, index = 0) {
       ? ['صح', 'خطأ']
       : ['فهم المفهوم وتطبيقه', 'حفظ الكلمات فقط', 'تخطي التدريب', 'عدم المراجعة'];
 
-  const foundAnswer = options.findIndex((item) => item === raw?.answer || raw?.correctAnswer);
+  const foundAnswer = options.findIndex((item) => item === raw?.answer || item === raw?.correctAnswer);
 
   const answerIndex = Number.isInteger(raw?.answerIndex)
     ? raw.answerIndex
@@ -176,7 +177,16 @@ export default function LearningPackFlowV2({
     setActiveSectionId(sectionId);
   };
 
-  if (pack.locked) return <Locked goBack={goBack} />;
+  if (pack.locked) {
+    return (
+      <PaywallScreen
+        studentId={student?.id || 'demo-student'}
+        onDone={goBack}
+        onBack={goBack}
+        styles={styles}
+      />
+    );
+  }
 
   if (completed) {
     return (
