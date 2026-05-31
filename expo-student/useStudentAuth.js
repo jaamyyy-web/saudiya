@@ -25,6 +25,7 @@ async function signInWithProviderPlaceholder() {
 }
 
 export function useGoogleSignInRequest() {
+  const configured = hasGoogleOAuthConfigured();
   return Google.useAuthRequest({
     expoClientId: GOOGLE_AUTH_CONFIG.expoClientId || undefined,
     iosClientId: GOOGLE_AUTH_CONFIG.iosClientId || undefined,

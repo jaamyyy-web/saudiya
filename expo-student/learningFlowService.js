@@ -1,4 +1,4 @@
-export const LEARNING_SECTION_ORDER = ['summary', 'mcq', 'fib', 'tf', 'hoq'];
+export const LEARNING_SECTION_ORDER = ['summary', 'mcq', 'fib', 'tf', 'hoq', 'comprehensive'];
 
 export function getSectionIndex(sectionId) {
   const index = LEARNING_SECTION_ORDER.indexOf(sectionId);

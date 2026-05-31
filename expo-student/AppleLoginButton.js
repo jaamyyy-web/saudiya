@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Platform, Text, TouchableOpacity } from 'react-native';
+import { Platform, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { OAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from './firebase';
 import { signInAsGuest } from './useStudentAuth';
 
-export default function AppleLoginButton({ onLogin, styles }) {
+export default function AppleLoginButton({ onLogin }) {
   const [busy, setBusy] = useState(false);
 
   async function handleAppleSignIn() {
@@ -47,9 +47,27 @@ export default function AppleLoginButton({ onLogin, styles }) {
   }
 
   return (
-    <TouchableOpacity style={styles.social} onPress={handleAppleSignIn} disabled={busy}>
-      <Ionicons name="logo-apple" size={21} />
-      <Text style={styles.socialText}>{busy ? 'جاري الدخول...' : 'الدخول بواسطة Apple'}</Text>
+    <TouchableOpacity style={styles.appleBtn} onPress={handleAppleSignIn} disabled={busy}>
+      <Ionicons name="logo-apple" size={24} color="#FFFFFF" />
+      <Text style={styles.appleBtnText}>{busy ? 'جاري الدخول...' : 'تسجيل الدخول باستخدام Apple'}</Text>
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  appleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000000',
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  appleBtnText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginLeft: 10,
+    marginRight: 10,
+  }
+});

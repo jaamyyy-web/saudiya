@@ -118,86 +118,110 @@ async function generateWithGemini(job) {
   return JSON.parse(text);
 }
 
+/**
+ * Core generation logic extracted so it can be called from both
+ * onCreate (new job) and onUpdate (admin pressed Retry).
+ */
+async function runGenerationJob(jobId, originalJob) {
+  try {
+    await db.collection('generation_jobs').doc(jobId).update({
+      status: 'processing',
+      startedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    const extractedText = await extractTextFromStorage(originalJob);
+    const job = {
+      ...originalJob,
+      extractedText: extractedText || originalJob.extractedText || originalJob.sourceText || '',
+    };
+
+    await db.collection('generation_jobs').doc(jobId).update({
+      extractedTextLength: job.extractedText.length,
+      extractedTextPreview: job.extractedText.slice(0, 500),
+      storagePathUsed: getStoragePath(originalJob),
+    });
+
+    const generated = sanitizeGeneratedContent(await generateWithGemini(job), job);
+
+    const learningPackRef = await db.collection('learning_packs').add({
+      title: job.title || generated.summary.title || 'Generated Learning Pack',
+      grade: job.grade || 'الصف السابع',
+      subject: job.subject || 'العلوم',
+      medium: job.medium || 'Arabic',
+      difficulty: job.difficulty || 'easy',
+      status: 'draft',
+      sourceFile: job.fileName || null,
+      sourceStoragePath: getStoragePath(job),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      generatedFromJob: jobId,
+      order: job.order || 999,
+      questionCounts: {
+        mcq: generated.questions.filter((q) => q.type === 'MCQ').length,
+        fib: generated.questions.filter((q) => q.type === 'FIB').length,
+        trueFalse: generated.questions.filter((q) => q.type === 'TF').length,
+        hoq: generated.questions.filter((q) => q.type === 'HOQ').length,
+      },
+      quizStatus: 'draft',
+      summaryStatus: 'draft',
+    });
+
+    await db.collection('summaries').add({
+      packId: learningPackRef.id,
+      status: 'draft',
+      ...generated.summary,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    for (const [index, question] of generated.questions.entries()) {
+      await db.collection('questions').add({
+        packId: learningPackRef.id,
+        status: 'draft',
+        order: index + 1,
+        ...question,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
+    await db.collection('generation_jobs').doc(jobId).update({
+      status: 'completed',
+      learningPackId: learningPackRef.id,
+      questionCount: generated.questions.length,
+      completedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Generation job failed:', error);
+    await db.collection('generation_jobs').doc(jobId).update({
+      status: 'failed',
+      errorMessage: error.message,
+      failedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+}
+
+// Triggered when a new generation_jobs document is created (Queue AI button).
 exports.processGenerationJob = functions.firestore
   .document('generation_jobs/{jobId}')
   .onCreate(async (snap, context) => {
-    const originalJob = snap.data();
-    const jobId = context.params.jobId;
+    return runGenerationJob(context.params.jobId, snap.data());
+  });
 
-    try {
-      await db.collection('generation_jobs').doc(jobId).update({
-        status: 'processing',
-        startedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+// Triggered when status is set back to 'queued' on an existing job (Retry button).
+// This was previously a no-op because only onCreate was wired.
+exports.retryGenerationJob = functions.firestore
+  .document('generation_jobs/{jobId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
 
-      const extractedText = await extractTextFromStorage(originalJob);
-      const job = {
-        ...originalJob,
-        extractedText: extractedText || originalJob.extractedText || originalJob.sourceText || '',
-      };
-
-      await db.collection('generation_jobs').doc(jobId).update({
-        extractedTextLength: job.extractedText.length,
-        extractedTextPreview: job.extractedText.slice(0, 500),
-        storagePathUsed: getStoragePath(originalJob),
-      });
-
-      const generated = sanitizeGeneratedContent(await generateWithGemini(job), job);
-
-      const learningPackRef = await db.collection('learning_packs').add({
-        title: job.title || generated.summary.title || 'Generated Learning Pack',
-        grade: job.grade || 'الصف السابع',
-        subject: job.subject || 'العلوم',
-        medium: job.medium || 'Arabic',
-        difficulty: job.difficulty || 'easy',
-        status: 'draft',
-        sourceFile: job.fileName || null,
-        sourceStoragePath: getStoragePath(job),
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        generatedFromJob: jobId,
-        order: job.order || 999,
-        questionCounts: {
-          mcq: generated.questions.filter((q) => q.type === 'MCQ').length,
-          fib: generated.questions.filter((q) => q.type === 'FIB').length,
-          trueFalse: generated.questions.filter((q) => q.type === 'TF').length,
-          hoq: generated.questions.filter((q) => q.type === 'HOQ').length,
-        },
-        quizStatus: 'draft',
-        summaryStatus: 'draft',
-      });
-
-      await db.collection('summaries').add({
-        packId: learningPackRef.id,
-        status: 'draft',
-        ...generated.summary,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      for (const [index, question] of generated.questions.entries()) {
-        await db.collection('questions').add({
-          packId: learningPackRef.id,
-          status: 'draft',
-          order: index + 1,
-          ...question,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-      }
-
-      await db.collection('generation_jobs').doc(jobId).update({
-        status: 'completed',
-        learningPackId: learningPackRef.id,
-        questionCount: generated.questions.length,
-        completedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-    } catch (error) {
-      console.error('Generation job failed:', error);
-      await db.collection('generation_jobs').doc(jobId).update({
-        status: 'failed',
-        errorMessage: error.message,
-        failedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+    // Only fire on an explicit retry: status must transition TO 'queued'
+    // from a terminal state (failed/cancelled/completed).
+    const terminalStates = ['failed', 'cancelled', 'completed'];
+    if (after.status !== 'queued' || !terminalStates.includes(before.status)) {
+      return null;
     }
+
+    return runGenerationJob(context.params.jobId, after);
   });

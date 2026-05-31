@@ -7,12 +7,15 @@ import { useLiveStudentAppData } from './useLiveStudentAppData';
 import { demoQuestions, demoSummary, loadPackQuestions, loadPackSummary } from './studentData';
 import { savePackCompletion, saveQuizAttempt } from './progressService';
 import LearningPackFlowV2 from './LearningPackFlowV2';
+import LoginScreenV2 from './LoginScreenV2';
 import {
   getDisplayAnalytics,
   getDisplayLeaderboard,
   getDisplayStudent,
   mergeLivePacksWithDemo,
 } from './liveContentAdapter';
+import { initializePurchases } from './billingService';
+import PaywallScreen from './PaywallScreen';
 
 I18nManager.allowRTL(true);
 
@@ -34,8 +37,13 @@ const tabs = [
   ['home', 'الرئيسية', 'home'], ['packs', 'الحزم', 'book'], ['challenge', 'التحدي', 'flash'], ['analytics', 'التحليلات', 'stats-chart'], ['profile', 'حسابي', 'person'],
 ].map(([id, label, icon]) => ({ id, label, icon }));
 const flowSteps = [
-  ['summary', 'الملخص', 'document-text'], ['mcq', 'MCQ', 'checkmark-circle'], ['fib', 'املأ الفراغ', 'create'], ['tf', 'صح / خطأ', 'help-circle'], ['hoq', 'أسئلة تفكير', 'bulb'],
-].map(([id, label, icon]) => ({ id, label, icon }));
+  ['summary', 'ملخص الدرس', 'document-text', 'استعرض أهم النقاط والمفاهيم الأساسية.'],
+  ['mcq', 'اختبار متعدد (MCQ)', 'list', 'اختر الإجابة الصحيحة من بين الخيارات.'],
+  ['fib', 'أكمل الفراغ (FIB)', 'remove', 'أكمل العبارات بالكلمة أو العبارة المناسبة.'],
+  ['tf', 'صح أو خطأ (TF)', 'checkmark-circle', 'حدد ما إذا كانت العبارة صحيحة أم خاطئة.'],
+  ['hoq', 'أسئلة التفكير العليا (HOQ)', 'bulb', 'اختبر مهارات التفكير والتحليل والاستنتاج.'],
+  ['comprehensive', 'الاختبار الشامل', 'trophy', 'اختبار شامل على جميع محتويات الباقة.'],
+].map(([id, label, icon, desc]) => ({ id, label, icon, desc }));
 const demoLeaders = ['سارة محمد', 'أحمد علي', 'نورة صالح', 'فهد خالد', 'ليان عبدالله'];
 
 function normalizeQuestion(raw, index = 0) {
@@ -65,16 +73,61 @@ export default function App() {
   const [tab, setTab] = useState('home');
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedPack, setSelectedPack] = useState(null);
-  const { student, livePacks, leaderboard, analytics, completedPackIds, loading, errors } = useLiveStudentAppData();
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  const {
+    student,
+    studentId,
+    isPremium,
+    livePacks,
+    leaderboard,
+    analytics,
+    completedPackIds,
+    loading,
+    errors,
+  } = useLiveStudentAppData();
+
+  useEffect(() => {
+    if (studentId) {
+      initializePurchases(studentId);
+    }
+  }, [studentId]);
 
   const displayStudent = getDisplayStudent(student, demoStudent);
-  const displayPacks = mergeLivePacksWithDemo(livePacks, demoPacks).map((pack) => ({ ...pack, progress: completedPackIds?.has?.(pack.id) ? 100 : pack.progress }));
+  const displayPacks = mergeLivePacksWithDemo(livePacks, demoPacks).map((pack) => ({
+    ...pack,
+    progress: completedPackIds?.has?.(pack.id) ? 100 : pack.progress,
+  }));
   const displayLeaderboard = getDisplayLeaderboard(leaderboard, demoLeaders);
   const displayAnalytics = getDisplayAnalytics(analytics, displayStudent);
 
   if (!started) return <Splash onStart={() => setStarted(true)} />;
-  if (!loggedIn) return <Login onLogin={() => setLoggedIn(true)} />;
+  if (!loggedIn) return <LoginScreenV2 onLogin={() => setLoggedIn(true)} />;
   if (loading && displayPacks.length === 0) return <LoadingScreen />;
+
+  if (showPaywall) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.safe}>
+          <StatusBar style="dark" />
+          <View style={styles.app}>
+            <TouchableOpacity style={styles.back} onPress={() => setShowPaywall(false)}>
+              <Ionicons name="arrow-forward" size={18} color="#047857" />
+              <Text style={styles.backText}>رجوع</Text>
+            </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+              <PaywallScreen
+                studentId={studentId}
+                onDone={() => setShowPaywall(false)}
+                onBack={() => setShowPaywall(false)}
+                styles={styles}
+              />
+            </ScrollView>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
 
   const openPacks = (subjectId = null) => { setSelectedSubject(subjectId); setSelectedPack(null); setTab('packs'); };
   const openTab = (next) => { setSelectedPack(null); setTab(next); };
@@ -87,14 +140,14 @@ export default function App() {
       {tab === 'packs' && <Packs packs={displayPacks} student={displayStudent} selectedSubject={selectedSubject} setSelectedSubject={setSelectedSubject} selectedPack={selectedPack} setSelectedPack={setSelectedPack} />}
       {tab === 'challenge' && <Challenge student={displayStudent} />}
       {tab === 'analytics' && <Analytics analytics={displayAnalytics} leaderboard={displayLeaderboard} openPacks={openPacks} />}
-      {tab === 'profile' && <Profile student={displayStudent} analytics={displayAnalytics} />}
+      {tab === 'profile' && <Profile student={displayStudent} analytics={displayAnalytics} isPremium={isPremium} setShowPaywall={setShowPaywall} />}
     </ScrollView>
     <BottomNav tab={tab} setTab={openTab} />
   </View></SafeAreaView></SafeAreaProvider>;
 }
 
 function Splash({ onStart }) { return <SafeAreaProvider><SafeAreaView style={styles.safe}><View style={styles.center}><View style={styles.logo}><Text style={styles.logoText}>س</Text></View><Text style={styles.splashTitle}>Saudi Edu</Text><Text style={styles.muted}>تعلم بذكاء، اختبر نفسك، وتقدم كل يوم</Text><Button title="ابدأ الآن" onPress={onStart} /></View></SafeAreaView></SafeAreaProvider>; }
-function Login({ onLogin }) { return <SafeAreaProvider><SafeAreaView style={styles.safe}><View style={styles.login}><Text style={styles.title}>مرحباً بك</Text><Text style={styles.muted}>سجل الدخول لمتابعة التعلم</Text><View style={styles.card}><Social icon="logo-google" title="الدخول بواسطة Google" onPress={onLogin} /><Social icon="logo-apple" title="الدخول بواسطة Apple" onPress={onLogin} /><Button title="دخول تجريبي" onPress={onLogin} /></View></View></SafeAreaView></SafeAreaProvider>; }
+// LoginScreenV2 (with real Google / Apple auth) is now used instead of the old inline Login stub.
 function LoadingScreen() { return <SafeAreaProvider><SafeAreaView style={styles.safe}><View style={styles.center}><Text style={styles.title}>جاري تحميل المحتوى...</Text><Text style={styles.muted}>يتم الاتصال بقاعدة البيانات</Text></View></SafeAreaView></SafeAreaProvider>; }
 function LiveWarning() { return <View style={styles.warning}><Text style={styles.warningText}>تم تشغيل وضع العرض التجريبي عند تعذر تحميل بعض البيانات الحية.</Text></View>; }
 function Social({ icon, title, onPress }) { return <TouchableOpacity style={styles.social} onPress={onPress}><Ionicons name={icon} size={21} /><Text style={styles.socialText}>{title}</Text></TouchableOpacity>; }
@@ -116,51 +169,7 @@ function Packs({ packs, student, selectedSubject, setSelectedSubject, selectedPa
 }
 function PackCard({ pack, onPress }) { return <TouchableOpacity style={styles.pack} onPress={onPress}><View style={styles.packTop}><View style={styles.packIcon}><Ionicons name={pack.locked ? 'lock-closed' : 'book'} size={20} color="#047857" /></View><View style={{ flex: 1 }}><Text style={styles.packTitle}>{pack.title}</Text><Text style={styles.packMeta}>{pack.grade} • {pack.subject} {pack.source === 'firestore' ? '• مباشر' : ''}</Text></View></View><View style={styles.bar}><View style={[styles.fill, { width: `${pack.progress || 0}%` }]} /></View><Text style={styles.progress}>{pack.locked ? 'مغلق - يحتاج Premium' : `اكتمل ${pack.progress || 0}%`}</Text></TouchableOpacity>; }
 
-function LearningPackFlow({ pack, student, goBack }) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [completed, setCompleted] = useState(false);
-  const [summary, setSummary] = useState(demoSummary);
-  const [questions, setQuestions] = useState(demoQuestions);
-  const [contentLoading, setContentLoading] = useState(false);
-  const [attempts, setAttempts] = useState({});
-  const step = flowSteps[stepIndex];
-  const currentQuestion = getQuestionForStep(questions, step.id);
-  const percent = completed ? 100 : Math.round((stepIndex / flowSteps.length) * 100);
-
-  useEffect(() => {
-    let active = true;
-    setContentLoading(true); setSummary(demoSummary); setQuestions(demoQuestions); setAttempts({}); setStepIndex(0); setSelected(null); setCompleted(false);
-    Promise.all([loadPackSummary(pack.id), loadPackQuestions(pack.id)])
-      .then(([nextSummary, nextQuestions]) => { if (!active) return; setSummary(nextSummary || demoSummary); setQuestions(Array.isArray(nextQuestions) && nextQuestions.length ? nextQuestions : demoQuestions); })
-      .catch(() => { if (!active) return; setSummary(demoSummary); setQuestions(demoQuestions); })
-      .finally(() => { if (active) setContentLoading(false); });
-    return () => { active = false; };
-  }, [pack.id]);
-
-  const chooseAnswer = (index) => {
-    if (selected !== null) return;
-    setSelected(index);
-    const isCorrect = index === currentQuestion.answerIndex;
-    setAttempts((current) => ({ ...current, [currentQuestion.id]: { isCorrect, questionType: currentQuestion.type } }));
-    saveQuizAttempt({
-      studentId: student?.id || 'demo-student', packId: pack.id, questionId: currentQuestion.id, questionType: currentQuestion.type,
-      subject: pack.subject, grade: pack.grade, selectedIndex: index, answerIndex: currentQuestion.answerIndex, isCorrect,
-    });
-  };
-
-  const finishPack = () => {
-    const values = Object.values(attempts);
-    const correctCount = values.filter((item) => item.isCorrect).length;
-    savePackCompletion({ studentId: student?.id || 'demo-student', packId: pack.id, subject: pack.subject, grade: pack.grade, xpEarned: pack.xp || 120, correctCount, totalQuestions: values.length });
-    setCompleted(true);
-  };
-
-  const next = () => { setSelected(null); stepIndex >= flowSteps.length - 1 ? finishPack() : setStepIndex(stepIndex + 1); };
-  if (pack.locked) return <Locked goBack={goBack} />;
-  if (completed) return <Completion pack={pack} goBack={goBack} restart={() => { setCompleted(false); setStepIndex(0); setAttempts({}); }} />;
-  return <View><Back onPress={goBack} /><View style={styles.detail}>{contentLoading && <Text style={styles.loadingInline}>جاري تحميل محتوى الحزمة...</Text>}<View style={styles.bigIcon}><Ionicons name="book" size={32} color="#047857" /></View><Text style={styles.detailTitle}>{pack.title}</Text><Text style={styles.packMeta}>{pack.grade} • {pack.subject}</Text><View style={styles.bar}><View style={[styles.fill, { width: `${percent}%` }]} /></View><Text style={styles.progress}>تقدم الحزمة: {percent}%</Text><View style={styles.stepRow}>{flowSteps.map((item, i) => <View key={item.id} style={[styles.stepDot, i <= stepIndex && styles.stepActive]}><Ionicons name={item.icon} size={15} color={i <= stepIndex ? 'white' : '#94a3b8'} /></View>)}</View><View style={styles.lesson}>{step.id === 'summary' ? <SummaryStep pack={pack} summary={summary} /> : <QuestionStep selected={selected} setSelected={chooseAnswer} type={step.label} questionData={currentQuestion} />}</View><Button title={stepIndex === flowSteps.length - 1 ? 'إنهاء الحزمة' : 'التالي'} onPress={next} /></View></View>;
-}
+// LearningPackFlow V1 removed — LearningPackFlowV2 is used everywhere.
 
 function Back({ onPress }) { return <TouchableOpacity style={styles.back} onPress={onPress}><Ionicons name="arrow-forward" size={18} color="#047857" /><Text style={styles.backText}>رجوع</Text></TouchableOpacity>; }
 function Locked({ goBack }) { return <View><Back onPress={goBack} /><View style={styles.locked}><Ionicons name="lock-closed" size={52} color="#d97706" /><Text style={styles.detailTitle}>هذه الحزمة Premium</Text><Text style={styles.centerText}>افتح الخطة المدفوعة للوصول إلى الملخص والاختبارات الكاملة.</Text><Button title="افتح Premium" gold /></View></View>; }
@@ -170,7 +179,7 @@ function Completion({ pack, goBack, restart }) { return <View><View style={style
 
 function Challenge({ student }) { const [selected, setSelected] = useState(null); return <View><View style={styles.challengeHero}><Text style={styles.challengeTitle}>تحدي اليوم</Text><Text style={styles.challengeText}>3 أسئلة من نقاطك الضعيفة</Text><View style={styles.challengeReward}><Ionicons name="gift" size={18} color="#92400e" /><Text style={styles.rewardText}>+50 XP عند الإكمال</Text></View></View><View style={styles.card}><QuestionStep type="MCQ" selected={selected} setSelected={(i) => { setSelected(i); const q = normalizeQuestion(demoQuestions[0]); saveQuizAttempt({ studentId: student?.id || 'demo-student', packId: 'daily-challenge', questionId: q.id, questionType: q.type, selectedIndex: i, answerIndex: q.answerIndex, isCorrect: i === q.answerIndex }); }} questionData={demoQuestions[0]} />{selected !== null && <Button title="سؤال جديد" onPress={() => setSelected(null)} />}</View></View>; }
 function Analytics({ analytics, leaderboard, openPacks }) { const weak = subjects.filter(s => s.score < 60); return <View><SectionTitle title="تقدّمك الدراسي" /><View style={styles.analyticsHero}><Text style={styles.analyticsBig}>{analytics.accuracy || 68}%</Text><Text style={styles.analyticsText}>متوسط الدقة هذا الأسبوع</Text><Text style={styles.analyticsSub}>البيانات الحية تظهر عند توفر تقدم الطالب</Text></View><View style={styles.row}><MiniStat title="XP" value={String(analytics.xp || 1250)} /><MiniStat title="حزم مكتملة" value={String(analytics.completedPacks || 12)} /><MiniStat title="السلسلة" value={String(analytics.streak || 8)} /></View><SectionTitle title="ترتيبك بين الطلاب" /><View style={styles.rankCard}><Text style={styles.rankTitle}>لوحة المتصدرين</Text>{leaderboard.map(item => <View key={`${item.rank}-${item.name}`} style={styles.rankRow}><Text style={styles.rankNo}>{item.rank}</Text><Text style={styles.rankName}>{item.name}</Text><Text style={styles.rankXp}>{item.xp} XP</Text></View>)}</View><SectionTitle title="أداء المواد" />{subjects.map(s => <TouchableOpacity key={s.id} style={styles.analyticsRow} onPress={() => openPacks(s.id)}><View style={styles.analyticsIcon}><Ionicons name={s.icon} size={19} color="#047857" /></View><View style={{ flex: 1 }}><Text style={styles.analyticsSubject}>{s.ar}</Text><View style={styles.bar}><View style={[styles.fill, { width: `${s.score}%`, backgroundColor: s.score < 60 ? '#d97706' : '#047857' }]} /></View></View><Text style={styles.analyticsScore}>{s.score}%</Text></TouchableOpacity>)}<SectionTitle title="نقاط تحتاج مراجعة" />{weak.map(s => <Tip key={s.id} text={`راجع ${s.ar}: النتيجة الحالية ${s.score}%.`} />)}</View>; }
-function Profile({ student, analytics }) { return <View><SectionTitle title="حسابي" /><View style={styles.profile}><View style={styles.avatar}><Text style={styles.avatarText}>{student.name?.[0] || 'أ'}</Text></View><Text style={styles.profileName}>{student.name}</Text><Text style={styles.muted}>{student.grade} • {student.plan || 'الخطة المجانية'}</Text><View style={styles.row}><MiniStat title="XP" value={String(analytics.xp || student.xp)} /><MiniStat title="Streak" value={String(analytics.streak || student.streak)} /><MiniStat title="Accuracy" value={`${analytics.accuracy || student.accuracy}%`} /></View><SectionTitle title="الشارات والشهادات" /><View style={styles.badgeRow}>{['المجتهد', 'سلسلة 7 أيام', 'متقن MCQ'].map(x => <View key={x} style={styles.badge}><Ionicons name="ribbon" size={20} color="#d97706" /><Text style={styles.badgeText}>{x}</Text></View>)}</View>{['اللغة: العربية', 'التنبيهات', 'وضع ولي الأمر', 'إدارة الأجهزة'].map((x, i) => <TouchableOpacity key={x} style={styles.setting}><Ionicons name={['language','notifications','people','phone-portrait'][i]} size={19} color="#047857" /><Text style={styles.settingText}>{x}</Text></TouchableOpacity>)}<Button title="ترقية إلى Premium" gold /></View></View>; }
+function Profile({ student, analytics, isPremium, setShowPaywall }) { return <View><SectionTitle title="حسابي" /><View style={styles.profile}><View style={styles.avatar}><Text style={styles.avatarText}>{student.name?.[0] || 'أ'}</Text></View><Text style={styles.profileName}>{student.name}</Text><Text style={styles.muted}>{student.grade} • {isPremium ? 'عضو Premium نشط' : student.plan || 'الخطة المجانية'}</Text><View style={styles.row}><MiniStat title="XP" value={String(analytics.xp || student.xp)} /><MiniStat title="Streak" value={String(analytics.streak || student.streak)} /><MiniStat title="Accuracy" value={`${analytics.accuracy || student.accuracy}%`} /></View><SectionTitle title="الشارات والشهادات" /><View style={styles.badgeRow}>{['المجتهد', 'سلسلة 7 أيام', 'متقن MCQ'].map(x => <View key={x} style={styles.badge}><Ionicons name="ribbon" size={20} color="#d97706" /><Text style={styles.badgeText}>{x}</Text></View>)}</View>{['اللغة: العربية', 'التنبيهات', 'وضع ولي الأمر', 'إدارة الأجهزة'].map((x, i) => <TouchableOpacity key={x} style={styles.setting}><Ionicons name={['language','notifications','people','phone-portrait'][i]} size={19} color="#047857" /><Text style={styles.settingText}>{x}</Text></TouchableOpacity>)}{isPremium ? ( <View style={styles.tip}><Ionicons name="sparkles" size={18} color="#4338ca" /><Text style={styles.tipText}>اشتراك Premium مفعّل ونشط على جميع أجهزتك!</Text></View> ) : ( <Button title="ترقية إلى Premium" gold onPress={() => setShowPaywall(true)} /> )}</View></View>; }
 function BottomNav({ tab, setTab }) { return <View style={styles.bottom}>{tabs.map(item => <TouchableOpacity key={item.id} style={styles.tab} onPress={() => setTab(item.id)}><Ionicons name={item.icon} size={22} color={tab === item.id ? '#047857' : '#94a3b8'} /><Text style={[styles.tabText, tab === item.id && styles.tabActive]}>{item.label}</Text></TouchableOpacity>)}</View>; }
 
 const styles = StyleSheet.create({

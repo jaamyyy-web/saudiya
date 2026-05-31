@@ -40,5 +40,17 @@ service cloud.firestore {
     match /quiz_attempts/{document=**} {
       allow read, write: if isAuthenticated();
     }
+
+    // Subscriptions — students and admin read/write; used by PaywallScreen and SubscriptionList
+    match /subscriptions/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Admin users — readable by any authenticated user (needed for AuthGate check);
+    // writes should only be done via Firebase Console or admin SDK.
+    match /admin_users/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
   }
 }

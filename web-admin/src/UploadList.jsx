@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { CheckCircle2, ExternalLink, FileText, RefreshCw, Send, Sparkles, XCircle } from 'lucide-react';
 import { db } from './firebase';
@@ -22,7 +22,7 @@ function makeSlug(value = '') {
     .replace(/(^-|-$)/g, '') || `pack-${Date.now()}`;
 }
 
-export default function UploadList() {
+export default function UploadList({ searchQuery = '' }) {
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -50,6 +50,15 @@ export default function UploadList() {
 
     return () => unsubscribe();
   }, []);
+
+  const filteredUploads = useMemo(() => {
+    if (!searchQuery.trim()) return uploads;
+    const kw = searchQuery.trim().toLowerCase();
+    return uploads.filter((item) => {
+      const text = `${item.title || ''} ${item.fileName || ''} ${item.grade || ''} ${item.subject || ''} ${item.medium || ''}`.toLowerCase();
+      return text.includes(kw);
+    });
+  }, [uploads, searchQuery]);
 
   async function updateReviewStatus(uploadId, reviewStatus) {
     setBusyId(uploadId);
@@ -153,7 +162,7 @@ export default function UploadList() {
 
   return (
     <div className="upload-list">
-      {uploads.map((item) => {
+      {filteredUploads.map((item) => {
         const currentStatus = item.reviewStatus || item.aiGenerationStatus || item.status || 'uploaded';
         const canPublish = currentStatus === 'approved' || currentStatus === 'ready_to_publish';
         const canQueueAi = ['approved', 'ready_to_publish', 'published', 'published_to_learning_packs'].includes(currentStatus);

@@ -22,3 +22,8 @@ web-admin/.env.development
 web-admin/dist
 web-admin/node_modules
 debug.keystore
+
+# Expo
+expo-student/node_modules/
+expo-student/.expo/
+expo-student/dist/

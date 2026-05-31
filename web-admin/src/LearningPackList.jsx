@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { BookOpen, Eye, EyeOff, FileText, RefreshCw } from 'lucide-react';
 import { db } from './firebase';
@@ -16,7 +16,7 @@ function statusClass(status) {
   return '';
 }
 
-export default function LearningPackList() {
+export default function LearningPackList({ searchQuery = '' }) {
   const [packs, setPacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -44,6 +44,15 @@ export default function LearningPackList() {
 
     return () => unsubscribe();
   }, []);
+
+  const filteredPacks = useMemo(() => {
+    if (!searchQuery.trim()) return packs;
+    const kw = searchQuery.trim().toLowerCase();
+    return packs.filter((pack) => {
+      const text = `${pack.title || ''} ${pack.grade || ''} ${pack.subject || ''} ${pack.medium || ''}`.toLowerCase();
+      return text.includes(kw);
+    });
+  }, [packs, searchQuery]);
 
   async function publishPack(packId) {
     setBusyId(packId);
@@ -83,7 +92,7 @@ export default function LearningPackList() {
 
   return (
     <div className="learning-pack-list">
-      {packs.map((pack) => {
+      {filteredPacks.map((pack) => {
         const isBusy = busyId === pack.id;
         const status = pack.status || 'draft';
         return (

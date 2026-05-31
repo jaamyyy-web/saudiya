@@ -9,12 +9,15 @@ function statusClass(status) {
   return 'warning';
 }
 
-export default function StudentList() {
+export default function StudentList({ externalSearch = '' }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
+  const [internalSearch, setInternalSearch] = useState('');
   const [busyId, setBusyId] = useState('');
+
+  // Use topbar global search when provided, otherwise internal search box
+  const search = externalSearch || internalSearch;
 
   useEffect(() => {
     if (!db) {
@@ -70,10 +73,13 @@ export default function StudentList() {
 
   return (
     <div className="student-live-wrap">
-      <div className="student-search-row">
-        <Search size={17} />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, email, grade, or plan..." />
-      </div>
+      {/* Show internal search box only when not driven by topbar global search */}
+      {!externalSearch && (
+        <div className="student-search-row">
+          <Search size={17} />
+          <input value={internalSearch} onChange={(e) => setInternalSearch(e.target.value)} placeholder="Search by name, email, grade, or plan..." />
+        </div>
+      )}
 
       {filteredStudents.length === 0 ? (
         <div className="empty-review-card">
