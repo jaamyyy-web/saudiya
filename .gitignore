@@ -27,3 +27,6 @@ debug.keystore
 expo-student/node_modules/
 expo-student/.expo/
 expo-student/dist/
+
+# Firebase Cache
+.firebase/

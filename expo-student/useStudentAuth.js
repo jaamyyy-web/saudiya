@@ -26,11 +26,12 @@ async function signInWithProviderPlaceholder() {
 
 export function useGoogleSignInRequest() {
   const configured = hasGoogleOAuthConfigured();
+  const dummyId = configured ? undefined : '123456-dummy.apps.googleusercontent.com';
   return Google.useAuthRequest({
-    expoClientId: GOOGLE_AUTH_CONFIG.expoClientId || undefined,
-    iosClientId: GOOGLE_AUTH_CONFIG.iosClientId || undefined,
-    androidClientId: GOOGLE_AUTH_CONFIG.androidClientId || undefined,
-    webClientId: GOOGLE_AUTH_CONFIG.webClientId || undefined,
+    expoClientId: GOOGLE_AUTH_CONFIG.expoClientId || dummyId,
+    iosClientId: GOOGLE_AUTH_CONFIG.iosClientId || dummyId,
+    androidClientId: GOOGLE_AUTH_CONFIG.androidClientId || dummyId,
+    webClientId: GOOGLE_AUTH_CONFIG.webClientId || dummyId,
   });
 }
 

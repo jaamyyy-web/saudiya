@@ -21,7 +21,7 @@ I18nManager.allowRTL(true);
 
 const demoStudent = { id: 'demo-student', name: 'أحمد علي', grade: 'الصف السابع', plan: 'الخطة المجانية', xp: 1250, streak: 8, accuracy: 68, completedPacks: 12 };
 const subjects = [
-  ['islamic', 'الدراسات الإسلامية', 'moon', 86], ['arabic', 'اللغة العربية', 'language', 74], ['english', 'اللغة الإنجليزية', 'text', 61],
+  ['islamic', 'الدراسات الإسلامية', 'moon', 86], ['tajweed', 'التجويد', 'book-outline', 78], ['arabic', 'اللغة العربية', 'language', 74], ['english', 'اللغة الإنجليزية', 'text', 61],
   ['math', 'الرياضيات', 'calculator', 52], ['science', 'العلوم', 'flask', 58], ['social', 'الدراسات الاجتماعية', 'earth', 79],
   ['digital', 'المهارات الرقمية', 'laptop', 68], ['life', 'المهارات الحياتية والأسرية', 'home', 72], ['art', 'التربية الفنية', 'color-palette', 91],
   ['health', 'التربية البدنية والصحية', 'fitness', 83], ['thinking', 'التفكير الناقد', 'bulb', 49],

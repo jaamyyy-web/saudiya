@@ -137,10 +137,30 @@ export default function LearningPackFlowV2({ pack, student, goBack, flowSteps, s
   const [contentLoading, setContentLoading] = useState(false);
   const [attempts, setAttempts] = useState({});
   const [completedSectionIds, setCompletedSectionIds] = useState([]);
+  const [questionIndex, setQuestionIndex] = useState(0);
 
   const stepIndex = activeSectionId ? getSectionIndex(activeSectionId) : 0;
   const step = flowSteps[stepIndex] || flowSteps[0];
-  const currentQuestion = getQuestionForStep(questions, step.id);
+
+  // Filter questions that belong to the active step/section
+  const sectionQuestions = React.useMemo(() => {
+    if (!step || step.id === 'summary') return [];
+    
+    const typeMap = { mcq: 'MCQ', fib: 'FIB', tf: 'TF', hoq: 'HOQ' };
+    const normalized = (questions?.length ? questions : demoQuestions).map(normalizeQuestion);
+    
+    if (step.id === 'comprehensive') {
+      // Comprehensive takes up to 8 questions from all categories for a final review
+      return normalized.slice(0, 8);
+    }
+    
+    const targetType = typeMap[step.id];
+    return normalized.filter((q) => q.type === targetType);
+  }, [questions, step?.id]);
+
+  const currentQuestion = sectionQuestions[questionIndex] || sectionQuestions[0] || normalizeQuestion(demoQuestions[0]);
+  
+  // Calculate exact completion percentage based on both the sections and the question progress
   const percent = completed ? 100 : Math.round((stepIndex / flowSteps.length) * 100);
 
   useEffect(() => {
@@ -152,6 +172,7 @@ export default function LearningPackFlowV2({ pack, student, goBack, flowSteps, s
     setActiveSectionId(null);
     setCompletedSectionIds([]);
     setSelected(null);
+    setQuestionIndex(0);
     setCompleted(false);
 
     Promise.all([loadPackSummary(pack.id), loadPackQuestions(pack.id)]).then(([nextSummary, nextQuestions]) => {
@@ -185,7 +206,21 @@ export default function LearningPackFlowV2({ pack, student, goBack, flowSteps, s
   };
 
   const next = () => {
+    // If the student is in a quiz section and hasn't answered, don't allow skipping
+    if (step.id !== 'summary' && selected === null) {
+      return;
+    }
+
+    // If there are more questions in the current section, move to the next question
+    if (step.id !== 'summary' && questionIndex < sectionQuestions.length - 1) {
+      setSelected(null);
+      setQuestionIndex((prev) => prev + 1);
+      return;
+    }
+
+    // Otherwise, move to the next section/step
     setSelected(null);
+    setQuestionIndex(0);
     const nextCompleted = markSectionComplete(completedSectionIds, step.id);
     setCompletedSectionIds(nextCompleted);
     const nextSectionId = getNextSectionId(step.id);
@@ -193,11 +228,17 @@ export default function LearningPackFlowV2({ pack, student, goBack, flowSteps, s
     setActiveSectionId(nextSectionId);
   };
 
-  const selectSection = (sectionId) => { setSelected(null); setActiveSectionId(sectionId); };
+  const selectSection = (sectionId) => { 
+    setSelected(null); 
+    setQuestionIndex(0);
+    setActiveSectionId(sectionId); 
+  };
 
   if (pack.locked) { return <PaywallScreen studentId={student?.id || 'demo-student'} onDone={goBack} onBack={goBack} styles={styles} />; }
-  if (completed) { return <Completion pack={pack} goBack={goBack} restart={() => { setCompleted(false); setActiveSectionId(null); setCompletedSectionIds([]); setAttempts({}); }} />; }
+  if (completed) { return <Completion pack={pack} goBack={goBack} restart={() => { setCompleted(false); setActiveSectionId(null); setCompletedSectionIds([]); setAttempts({}); setQuestionIndex(0); }} />; }
   if (activeSectionId === null) { return <PackDetailsScreen pack={pack} flowSteps={flowSteps} onStart={selectSection} goBack={goBack} />; }
+
+  const showFinishBtn = stepIndex === flowSteps.length - 1 && (step.id === 'summary' || questionIndex === sectionQuestions.length - 1);
 
   return (
     <View style={{flex:1}}>
@@ -210,13 +251,23 @@ export default function LearningPackFlowV2({ pack, student, goBack, flowSteps, s
         <Text style={styles.progress}>تقدم الحزمة: {percent}%</Text>
         <SectionProgressDots flowSteps={flowSteps} stepIndex={stepIndex} completedSectionIds={completedSectionIds} onSelectSection={selectSection} styles={styles} />
         <View style={styles.lesson}>
-          {step.id === 'summary' ? <SummaryStep pack={pack} summary={summary} /> : <QuestionStep selected={selected} setSelected={chooseAnswer} type={step.label} questionData={currentQuestion} />}
+          {step.id === 'summary' ? (
+            <SummaryStep pack={pack} summary={summary} />
+          ) : (
+            <QuestionStep 
+              selected={selected} 
+              setSelected={chooseAnswer} 
+              type={`${step.label} (${questionIndex + 1} من ${sectionQuestions.length})`} 
+              questionData={currentQuestion} 
+            />
+          )}
         </View>
-        <Button title={stepIndex === flowSteps.length - 1 ? 'إنهاء الحزمة' : 'التالي'} onPress={next} />
+        <Button title={showFinishBtn ? 'إنهاء الحزمة' : 'التالي'} onPress={next} />
       </View>
     </View>
   );
 }
+
 
 const localStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAF8F5' },
