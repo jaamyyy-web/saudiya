@@ -177,8 +177,94 @@ function PackCard({ pack, onPress }) { return <TouchableOpacity style={styles.pa
 
 function Back({ onPress }) { return <TouchableOpacity style={styles.back} onPress={onPress}><Ionicons name="arrow-forward" size={18} color="#047857" /><Text style={styles.backText}>رجوع</Text></TouchableOpacity>; }
 function Locked({ goBack }) { return <View><Back onPress={goBack} /><View style={styles.locked}><Ionicons name="lock-closed" size={52} color="#d97706" /><Text style={styles.detailTitle}>هذه الحزمة Premium</Text><Text style={styles.centerText}>افتح الخطة المدفوعة للوصول إلى الملخص والاختبارات الكاملة.</Text><Button title="افتح Premium" gold /></View></View>; }
-function SummaryStep({ pack, summary }) { const points = Array.isArray(summary?.points) && summary.points.length ? summary.points : demoSummary.points; return <View><Text style={styles.quizType}>الملخص</Text><Text style={styles.summaryTitle}>{summary?.title || pack.subject}</Text><Text style={styles.summaryText}>{summary?.body || summary?.content || demoSummary.body}</Text>{points.map((x) => <View key={x} style={styles.point}><Ionicons name="checkmark-circle" size={19} color="#047857" /><Text style={styles.pointText}>{x}</Text></View>)}</View>; }
-function QuestionStep({ type, selected, setSelected, questionData }) { const q = normalizeQuestion(questionData); const answered = selected !== null; return <View><Text style={styles.quizType}>{type}</Text><Text style={styles.quizQuestion}>{q.question}</Text>{q.options.map((o, i) => <TouchableOpacity key={`${q.id}-${i}`} onPress={() => setSelected(i)} style={[styles.answer, answered && i === q.answerIndex && styles.correct, answered && selected === i && i !== q.answerIndex && styles.wrong]}><Text style={styles.answerText}>{o}</Text></TouchableOpacity>)}{answered && <View style={styles.explain}><Text style={styles.explainTitle}>الشرح</Text><Text style={styles.explainText}>{q.explanation}</Text></View>}</View>; }
+function formatMathSymbols(math) {
+  if (!math) return '';
+  return math
+    .replace(/\\times/g, '×')
+    .replace(/\\div/g, '÷')
+    .replace(/\\cdot/g, '•')
+    .replace(/\\le/g, '≤')
+    .replace(/\\ge/g, '≥')
+    .replace(/\\neq/g, '≠')
+    .replace(/\\approx/g, '≈')
+    .replace(/\\\//g, '/')
+    .replace(/\\/g, '') // remove remaining backslashes
+    .replace(/\^2/g, '²')
+    .replace(/\^3/g, '³')
+    .replace(/\^4/g, '⁴')
+    .replace(/\^5/g, '⁵')
+    .replace(/\^x/g, 'ˣ')
+    .replace(/\^n/g, 'ⁿ')
+    .replace(/_1/g, '₁')
+    .replace(/_2/g, '₂')
+    .replace(/_x/g, 'ₓ')
+    .trim();
+}
+
+function MathText({ text, style }) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  return (
+    <View style={{ width: '100%' }}>
+      {lines.map((line, lineIdx) => {
+        if (line.trim() === '') {
+          return <View key={lineIdx} style={{ height: 6 }} />;
+        }
+        const parts = line.split(/(\$\$?[^$]+\$\$?)/g);
+        return (
+          <Text key={lineIdx} style={[style, { textAlign: 'right', writingDirection: 'rtl', marginBottom: 4 }]}>
+            {parts.map((part, partIdx) => {
+              const isBlock = part.startsWith('$$') && part.endsWith('$$');
+              const isInline = part.startsWith('$') && part.endsWith('$') && !isBlock;
+
+              if (isBlock) {
+                const math = part.slice(2, -2).trim();
+                const cleaned = formatMathSymbols(math);
+                return (
+                  <Text
+                    key={partIdx}
+                    style={{
+                      fontStyle: 'italic',
+                      fontWeight: 'bold',
+                      color: '#064e3b',
+                      fontSize: 18,
+                      writingDirection: 'ltr',
+                      marginVertical: 6,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {'\n   ' + cleaned + '   \n'}
+                  </Text>
+                );
+              } else if (isInline) {
+                const math = part.slice(1, -1).trim();
+                const cleaned = formatMathSymbols(math);
+                return (
+                  <Text
+                    key={partIdx}
+                    style={{
+                      fontStyle: 'italic',
+                      fontWeight: 'bold',
+                      color: '#047857',
+                      writingDirection: 'ltr',
+                    }}
+                  >
+                    {` ${cleaned} `}
+                  </Text>
+                );
+              } else {
+                return <Text key={partIdx}>{part}</Text>;
+              }
+            })}
+          </Text>
+        );
+      })}
+    </View>
+  );
+}
+
+function SummaryStep({ pack, summary }) { const points = Array.isArray(summary?.points) && summary.points.length ? summary.points : demoSummary.points; return <View><Text style={styles.quizType}>الملخص</Text><Text style={styles.summaryTitle}>{summary?.title || pack.subject}</Text><MathText style={styles.summaryText} text={summary?.body || summary?.content || demoSummary.body} />{points.map((x, idx) => <View key={idx} style={styles.point}><Ionicons name="checkmark-circle" size={19} color="#047857" /><MathText style={styles.pointText} text={x} /></View>)}</View>; }
+function QuestionStep({ type, selected, setSelected, questionData }) { const q = normalizeQuestion(questionData); const answered = selected !== null; return <View><Text style={styles.quizType}>{type}</Text><MathText style={styles.quizQuestion} text={q.question} />{q.options.map((o, i) => <TouchableOpacity key={`${q.id}-${i}`} onPress={() => setSelected(i)} style={[styles.answer, answered && i === q.answerIndex && styles.correct, answered && selected === i && i !== q.answerIndex && styles.wrong]}><MathText style={styles.answerText} text={o} /></TouchableOpacity>)}{answered && <View style={styles.explain}><Text style={styles.explainTitle}>الشرح</Text><MathText style={styles.explainText} text={q.explanation} /></View>}</View>; }
 function Completion({ pack, goBack, restart }) { return <View><View style={styles.complete}><Ionicons name="trophy" size={64} color="#d97706" /><Text style={styles.completeTitle}>أحسنت!</Text><Text style={styles.centerText}>أكملت {pack.title}</Text><View style={styles.reward}><Text style={styles.rewardBig}>+{pack.xp} XP</Text><Text style={styles.rewardSmall}>تم حفظ تقدمك في قاعدة البيانات</Text></View><Button title="إعادة التدريب" onPress={restart} /><TouchableOpacity style={styles.secondary} onPress={goBack}><Text style={styles.secondaryText}>العودة للحزم</Text></TouchableOpacity></View></View>; }
 
 function Challenge({ student }) { const [selected, setSelected] = useState(null); return <View><View style={styles.challengeHero}><Text style={styles.challengeTitle}>تحدي اليوم</Text><Text style={styles.challengeText}>3 أسئلة من نقاطك الضعيفة</Text><View style={styles.challengeReward}><Ionicons name="gift" size={18} color="#92400e" /><Text style={styles.rewardText}>+50 XP عند الإكمال</Text></View></View><View style={styles.card}><QuestionStep type="MCQ" selected={selected} setSelected={(i) => { setSelected(i); const q = normalizeQuestion(demoQuestions[0]); saveQuizAttempt({ studentId: student?.id || 'demo-student', packId: 'daily-challenge', questionId: q.id, questionType: q.type, selectedIndex: i, answerIndex: q.answerIndex, isCorrect: i === q.answerIndex }); }} questionData={demoQuestions[0]} />{selected !== null && <Button title="سؤال جديد" onPress={() => setSelected(null)} />}</View></View>; }
