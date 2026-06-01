@@ -189,10 +189,16 @@ function formatMathSymbols(math) {
     .replace(/\\approx/g, '≈')
     .replace(/\\\//g, '/')
     .replace(/\\/g, '') // remove remaining backslashes
+    .replace(/\^0/g, '⁰')
+    .replace(/\^1/g, '¹')
     .replace(/\^2/g, '²')
     .replace(/\^3/g, '³')
     .replace(/\^4/g, '⁴')
     .replace(/\^5/g, '⁵')
+    .replace(/\^6/g, '⁶')
+    .replace(/\^7/g, '⁷')
+    .replace(/\^8/g, '⁸')
+    .replace(/\^9/g, '⁹')
     .replace(/\^x/g, 'ˣ')
     .replace(/\^n/g, 'ⁿ')
     .replace(/_1/g, '₁')
@@ -229,11 +235,9 @@ function MathText({ text, style }) {
                       color: '#064e3b',
                       fontSize: 18,
                       writingDirection: 'ltr',
-                      marginVertical: 6,
-                      textAlign: 'center',
                     }}
                   >
-                    {'\n   ' + cleaned + '   \n'}
+                    {'\n   \u2066' + cleaned + '\u2069   \n'}
                   </Text>
                 );
               } else if (isInline) {
@@ -249,7 +253,7 @@ function MathText({ text, style }) {
                       writingDirection: 'ltr',
                     }}
                   >
-                    {` ${cleaned} `}
+                    {'\u2066 ' + cleaned + ' \u2069'}
                   </Text>
                 );
               } else {
