@@ -503,6 +503,7 @@ async function main() {
           title: summary.title,
           body: summary.body,
           points: summary.points,
+          status: 'published',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -533,6 +534,7 @@ async function main() {
             explanation: q.explanation,
             order: idx + 1,
             difficulty: idx < 5 ? 'easy' : idx < 10 ? 'medium' : 'hard',
+            status: 'published',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
@@ -550,6 +552,7 @@ async function main() {
             explanation: q.explanation,
             order: 15 + idx + 1,
             difficulty: idx < 4 ? 'easy' : idx < 8 ? 'medium' : 'hard',
+            status: 'published',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
@@ -567,6 +570,7 @@ async function main() {
             explanation: q.explanation,
             order: 25 + idx + 1,
             difficulty: idx < 4 ? 'easy' : idx < 8 ? 'medium' : 'hard',
+            status: 'published',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
@@ -584,6 +588,7 @@ async function main() {
             explanation: q.explanation,
             order: 35 + idx + 1,
             difficulty: 'hard',
+            status: 'published',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
